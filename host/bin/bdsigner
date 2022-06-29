@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+SCRIPTDIR="${BASH_SOURCE[0]}"
+SCRIPTDIR="$(dirname "${SCRIPTDIR}")"
+LIBDIR=${SCRIPTDIR}/../lib
+
+if [ "${JAVA_HOME}" != "" ]; then
+    JAVA=${JAVA_HOME}/bin/java
+else
+    JAVA=java
+fi
+
+$JAVA -cp ${LIBDIR}/'*' net.java.bd.tools.security.BDSigner $*
+

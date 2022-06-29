@@ -1,0 +1,3 @@
+[submodule "host/src/makefs_termux"]
+	path = host/src/makefs_termux
+	url = https://github.com/john-tornblom/makefs_termux.git
