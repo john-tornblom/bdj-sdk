@@ -46,7 +46,8 @@ JFLAGS        := -Xlint:-options -source 1.3 -target 1.3
 TMPL_DIRS  := $(shell find $(BDJSDK_HOME)/resources/AVCHD/ -type d)
 TMPL_FILES := $(shell find $(BDJSDK_HOME)/resources/AVCHD/ -type f)
 
-DISC_DIRS  := $(patsubst $(BDJSDK_HOME)/resources/AVCHD%,discdir%,$(TMPL_DIRS))
+DISC_DIRS  := $(patsubst $(BDJSDK_HOME)/resources/AVCHD%,discdir%,$(TMPL_DIRS)) \
+              discdir/BDMV/JAR
 DISC_FILES := $(patsubst $(BDJSDK_HOME)/resources/AVCHD%,discdir%,$(TMPL_FILES)) \
               discdir/BDMV/JAR/00000.jar
 
@@ -57,10 +58,8 @@ all: $(DISC_LABEL).iso
 discdir:
 	mkdir -p $(DISC_DIRS)
 
-discdir/BDMV/JAR:
-	mkdir -p $@
 
-discdir/BDMV/JAR/00000.jar: $(SOURCES) discdir/BDMV/JAR
+discdir/BDMV/JAR/00000.jar: discdir $(SOURCES)
 	$(JAVAC) $(JFLAGS) -cp $(CLASSPATH) $(SOURCES)
 	$(JAR) cf $@ -C src/ .
 	$(BDSIGNER) -keystore $(BDJSDK_HOME)/resources/sig.ks $@
