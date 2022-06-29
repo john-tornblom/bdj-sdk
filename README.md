@@ -7,7 +7,8 @@ install dependencies, and compile the source code.
 ```console
 john@localhost:~$ sudo apt-get install build-essential libbsd-dev git pkg-config
 john@localhost:~$ git clone --recurse-submodules https://github.com/john-tornblom/bdj-sdk
-john@localhost:~$ make -C bdj-sdk/host/src/makefs_termux install DESTDIR=$PWD/bdj-sdk/host/bin
+john@localhost:~$ make -C bdj-sdk/host/src/makefs_termux
+john@localhost:~$ make -C bdj-sdk/host/src/makefs_termux install DESTDIR=$PWD/bdj-sdk/host
 ```
 
 ## Usage example
