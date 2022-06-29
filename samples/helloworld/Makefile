@@ -57,6 +57,8 @@ all: $(DISC_LABEL).iso
 discdir:
 	mkdir -p $(DISC_DIRS)
 
+discdir/BDMV/JAR:
+	mkdir -p $@
 
 discdir/BDMV/JAR/00000.jar: $(SOURCES) discdir/BDMV/JAR
 	$(JAVAC) $(JFLAGS) -cp $(CLASSPATH) $(SOURCES)
