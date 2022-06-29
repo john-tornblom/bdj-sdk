@@ -5,7 +5,7 @@ On Debian-flavored operating systems, you can invoke the following commands to
 install dependencies, and compile the source code.
 
 ```console
-john@localhost:~$ sudo apt-get install build-essential libbsd-dev
+john@localhost:~$ sudo apt-get install build-essential libbsd-dev git pkg-config
 john@localhost:~$ git clone --recurse-submodules https://github.com/john-tornblom/bdj-sdk
 john@localhost:~$ make -C bdj-sdk/host/src/makefs_termux install DESTDIR=$PWD/bdj-sdk/host/bin
 ```
