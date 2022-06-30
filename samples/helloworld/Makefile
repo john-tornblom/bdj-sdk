@@ -36,7 +36,6 @@ export JAVA_HOME
 #
 CLASSPATH     := $(BDJSDK_HOME)/target/lib/classes.zip
 SOURCES       := $(wildcard src/org/homebrew/*.java)
-CLASSES       := $(wildcard src/org/homebrew/*.class)
 JFLAGS        := -Xlint:-options -source 1.3 -target 1.3
 
 
@@ -74,7 +73,7 @@ $(DISC_LABEL).iso: $(DISC_FILES)
 
 
 clean:
-	rm -rf META-INF $(DISC_LABEL).iso discdir $(CLASSES)
+	rm -rf META-INF $(DISC_LABEL).iso discdir src/org/homebrew/*.class
 
 
 test: $(DISC_LABEL).iso
