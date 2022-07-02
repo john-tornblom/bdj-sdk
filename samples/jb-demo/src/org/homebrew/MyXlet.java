@@ -11,7 +11,7 @@ public class MyXlet extends Thread implements Xlet {
     private LoggingUI logUI;
     
     public void initXlet(XletContext context) {
-	logUI = new LoggingUI();
+	logUI = LoggingUI.getInstance();
 	logUI.setSize(1280, 720);
 	
 	scene = HSceneFactory.getInstance().getDefaultHScene();

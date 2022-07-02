@@ -34,7 +34,7 @@ export JAVA_HOME
 #
 # Compilation artifacts
 #
-CLASSPATH     := $(BDJSDK_HOME)/target/lib/classes.zip
+CLASSPATH     := $(BDJSDK_HOME)/target/lib/enhanced-stubs.zip
 SOURCES       := $(wildcard src/org/homebrew/*.java)
 JFLAGS        := -Xlint:-options -source 1.3 -target 1.3
 
