@@ -14,11 +14,10 @@ public class LoggingUI extends Container {
     private final Color bgColor = new Color(5, 5, 5);
     private final ArrayList rows = new ArrayList();
     private static LoggingUI instance = null;
-    
+
     private LoggingUI() {
     }
 
-    
     public static LoggingUI getInstance() {
 	if(instance == null) {
 	    instance = new LoggingUI();
@@ -26,7 +25,7 @@ public class LoggingUI extends Container {
 
 	return instance;
     }
-    
+
     public void paint(Graphics g) {
 	g.setFont(font);
 	g.setColor(bgColor);
@@ -39,7 +38,7 @@ public class LoggingUI extends Container {
 	    g.drawString(row, 30, 40 + (i*15));
 	}
     }
-    
+
     public void log(String msg) {
 	rows.add(msg);
 	if(rows.size() > 45) {
@@ -52,23 +51,23 @@ public class LoggingUI extends Container {
 	StringWriter sw = new StringWriter();
 	PrintWriter pw = new PrintWriter(sw);
 	StringBuffer sb = new StringBuffer();
-	
+
 	t.printStackTrace(pw);
 	String st = sw.toString();
 
 	for(int i=0; i<st.length(); i++) {
 	    char ch = st.charAt(i);
-	    
+
 	    switch(ch) {
 	    case '\t':
 		sb.append("    ");
 		break;
-		
+
 	    case '\n':
 		log(sb.toString());
 		sb = new StringBuffer();
 		break;
-		    
+
 	    default:
 		sb.append(ch);
 		break;
