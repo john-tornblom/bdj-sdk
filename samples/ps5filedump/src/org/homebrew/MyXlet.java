@@ -74,7 +74,7 @@ public class MyXlet extends Thread implements Xlet {
     }
     
     private static void zipDir(ZipOutputStream zipOut, String path) throws IOException {
-	PrivilegedFile dir = new PrivilegedFile(path);
+	PrivilegedFileIO dir = new PrivilegedFileIO(path);
 	
 	if(!dir.isDirectory()) {
 	    zipFile(zipOut, path);
@@ -89,7 +89,7 @@ public class MyXlet extends Thread implements Xlet {
     }
 
     private static void zipFile(ZipOutputStream zipOut, String path) throws IOException {
-	PrivilegedFile file = new PrivilegedFile(path);
+	PrivilegedFileIO file = new PrivilegedFileIO(path);
 	
 	if(file.isDirectory()) {
 	    zipDir(zipOut, path);
@@ -103,13 +103,12 @@ public class MyXlet extends Thread implements Xlet {
     }
 
     private static byte[] readFile(String path) {
-	PrivilegedFile f = new PrivilegedFile(path);
+	PrivilegedFileIO f = new PrivilegedFileIO(path);
 	byte[] bytes = new byte[(int)f.length()];
 	
 	try {
 	    LoggingUI.getInstance().log(f.getPath());
-	    PrivilegedFileReader fr = new PrivilegedFileReader(f.getPath());
-	    fr.read(bytes);
+	    f.getInputStream().read(bytes);
 	} catch(Throwable t) {
 	    LoggingUI.getInstance().log(t);
 	}
