@@ -103,12 +103,12 @@ public class MyXlet extends Thread implements Xlet {
     }
 
     private static byte[] readFile(String path) {
-	PrivilegedFileIO f = new PrivilegedFileIO(path);
-	byte[] bytes = new byte[(int)f.length()];
+	PrivilegedFileIO file = new PrivilegedFileIO(path);
+	byte[] bytes = new byte[(int)file.length()];
 	
 	try {
-	    LoggingUI.getInstance().log(f.getPath());
-	    f.getInputStream().read(bytes);
+	    LoggingUI.getInstance().log(file.getPath());
+	    file.getInputStream().read(bytes);
 	} catch(Throwable t) {
 	    LoggingUI.getInstance().log(t);
 	}
