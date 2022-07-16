@@ -2,30 +2,33 @@ package org.homebrew;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 
-import sun.net.www.protocol.file.FileURLConnection;
+import sun.awt.io.FileFileIO;
 
 public class PrivilegedFileReader {
-    private PrivilegeEscalationProxy proxy = null;
-    private PrivilegedImpl impl = null;
+    private InputStream is = null;
     
     interface Interface extends Remote {
-	public void connect() throws IOException, RemoteException;
+	public InputStream getInputStream() throws IOException, RemoteException;
     }
     
-    class PrivilegedImpl extends FileURLConnection implements Interface {
-	public PrivilegedImpl(URL url, File file) {
-	    super(url, file);
+    class PrivilegedImpl extends FileFileIO implements Interface {
+	public PrivilegedImpl(String path) {
+	    super(path);
 	}
     }
     
     public PrivilegedFileReader(String path) {
+	final String sig = "()Ljava/io/InputStream;";
+	
 	try {
-	    impl = new PrivilegedImpl(new URL("file://" + path), new File(path));
-	    proxy = new PrivilegeEscalationProxy(impl);
+	    PrivilegedImpl impl = new PrivilegedImpl(path);
+	    PrivilegeEscalationProxy proxy = new PrivilegeEscalationProxy(impl);
+	    is = (InputStream)proxy.invokeMethod(new Object[]{}, "getInputStream", sig);
 	} catch (Throwable t) {
 	    LoggingUI.getInstance().log(t);
 	}
@@ -36,8 +39,7 @@ public class PrivilegedFileReader {
     }
     
     public int read(byte[] b, int off, int len) throws IOException {
-	proxy.invokeMethod(new Object[]{}, "connect", "()V");
-	return impl.getInputStream().read(b, off, len);
+	return is.read(b, off, len);
     }
 
     public int read(byte[] b) throws IOException {
