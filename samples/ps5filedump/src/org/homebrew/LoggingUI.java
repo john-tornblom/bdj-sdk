@@ -65,7 +65,7 @@ public class LoggingUI extends Container {
 	    rows.add(sb.toString());
 	}
 	
-	while(rows.size() > 45) {
+	while(rows.size() > 44) {
 	    rows.remove(0);
 	}
 	

@@ -15,32 +15,32 @@ import org.havi.ui.HSceneFactory;
 
 public class MyXlet extends Thread implements Xlet {
     private HScene scene;
-    private LoggingUI logUI;
+    private LoggingUI gui;
     
     public void initXlet(XletContext context) {
-	logUI = LoggingUI.getInstance();
-	logUI.setSize(1280, 720);
+	gui = LoggingUI.getInstance();
+	gui.setSize(1280, 720);
 	
 	scene = HSceneFactory.getInstance().getDefaultHScene();
-	scene.add(logUI, BorderLayout.CENTER);
+	scene.add(gui, BorderLayout.CENTER);
         scene.validate();
 	scene.repaint();
     }
     
     public void startXlet() {
-	logUI.setVisible(true);
+	gui.setVisible(true);
         scene.setVisible(true);
 	start();
     }
     
     public void pauseXlet() {
-	logUI.setVisible(false);
+	gui.setVisible(false);
     }
     
     public void destroyXlet(boolean unconditional) {
 	interrupt();
-	logUI.setVisible(false);
-	scene.remove(logUI);
+	gui.setVisible(false);
+	scene.remove(gui);
         scene = null;
     }
     
@@ -69,7 +69,7 @@ public class MyXlet extends Thread implements Xlet {
 	    }
 	    LoggingUI.getInstance().log("Done");
 	} catch (Throwable t) {
-	    logUI.log(t);
+	    LoggingUI.getInstance().log(t);
 	}
     }
     
@@ -107,9 +107,11 @@ public class MyXlet extends Thread implements Xlet {
 	byte[] bytes = new byte[(int)f.length()];
 	
 	try {
+	    LoggingUI.getInstance().log(f.getPath());
 	    PrivilegedFileReader fr = new PrivilegedFileReader(f.getPath());
 	    fr.read(bytes);
 	} catch(Throwable t) {
+	    LoggingUI.getInstance().log(t);
 	}
 	return bytes;
     }
