@@ -17,16 +17,15 @@ public class PrivilegedFileIO {
     interface Interface extends Remote {
 	public boolean canWrite() throws RemoteException;
 	public boolean canRead() throws RemoteException;
-    	public boolean delete() throws RemoteException;
+	public boolean delete() throws RemoteException;
 	public boolean exists() throws RemoteException;
 	public InputStream getInputStream() throws IOException, RemoteException;
 	public OutputStream getOutputStream() throws IOException, RemoteException;
-        public boolean isAbsolute() throws RemoteException;
 	public boolean isDirectory() throws RemoteException;
 	public boolean isFile() throws RemoteException;
-        public long lastModified() throws RemoteException;
-        public long length() throws RemoteException;
-        public String[] list() throws RemoteException;
+	public long lastModified() throws RemoteException;
+	public long length() throws RemoteException;
+	public String[] list() throws RemoteException;
 	public boolean mkdir() throws RemoteException;
     }
 
@@ -49,6 +48,9 @@ public class PrivilegedFileIO {
 	this(file.getPath());
     }
 
+    public String getAbsolutePath() {
+	return impl.getAbsolutePath();
+    }
     public String getName() {
 	return impl.getName();
     }
@@ -92,8 +94,7 @@ public class PrivilegedFileIO {
     }
 
     public boolean isAbsolute() {
-	Boolean b = (Boolean)proxy.invokeMethod(new Object[]{}, "isAbsolute", "()Z");
-	return b.booleanValue();
+	return impl.isAbsolute();
     }
 
     public boolean isDirectory() {
