@@ -20,7 +20,7 @@ public class PrivilegedFileIO {
     	public boolean delete() throws RemoteException;
 	public boolean exists() throws RemoteException;
 	public InputStream getInputStream() throws IOException, RemoteException;
-	public OutputStream getOutputStream() throws IOException, RemoteException;   
+	public OutputStream getOutputStream() throws IOException, RemoteException;
         public boolean isAbsolute() throws RemoteException;
 	public boolean isDirectory() throws RemoteException;
 	public boolean isFile() throws RemoteException;
