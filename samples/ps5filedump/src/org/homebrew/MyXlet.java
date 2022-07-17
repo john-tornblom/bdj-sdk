@@ -12,6 +12,7 @@ import javax.tv.xlet.XletContext;
 import org.havi.ui.HScene;
 import org.havi.ui.HSceneFactory;
 
+import java.io.InputStream;
 
 public class MyXlet extends Thread implements Xlet {
     private HScene scene;
@@ -108,7 +109,9 @@ public class MyXlet extends Thread implements Xlet {
 	
 	try {
 	    LoggingUI.getInstance().log(file.getPath());
-	    file.getInputStream().read(bytes);
+	    InputStream is = file.getInputStream();
+	    is.read(bytes);
+	    is.close();
 	} catch(Throwable t) {
 	    LoggingUI.getInstance().log(t);
 	}
