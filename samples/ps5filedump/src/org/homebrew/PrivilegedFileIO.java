@@ -27,6 +27,7 @@ public class PrivilegedFileIO {
 	public long length() throws RemoteException;
 	public String[] list() throws RemoteException;
 	public boolean mkdir() throws RemoteException;
+	public boolean mkdirs() throws RemoteException;
     }
 
     class PrivilegedImpl extends FileFileIO implements Interface {
@@ -48,17 +49,6 @@ public class PrivilegedFileIO {
 	this(file.getPath());
     }
 
-    public String getAbsolutePath() {
-	return impl.getAbsolutePath();
-    }
-    public String getName() {
-	return impl.getName();
-    }
-
-    public String getPath() {
-	return impl.getPath();
-    }
-
     public String canonPath(String path) throws IOException {
 	return impl.canonPath(path);
     }
@@ -78,9 +68,21 @@ public class PrivilegedFileIO {
 	return b.booleanValue();
     }
 
+    public boolean equals(Object that) {
+	return impl.equals(that);
+    }
+
     public boolean exists() {
 	Boolean b = (Boolean)proxy.invokeMethod(new Object[]{}, "exists", "()Z");
 	return b.booleanValue();
+    }
+
+    public String getAbsolutePath() {
+	return impl.getAbsolutePath();
+    }
+
+    public String getCanonicalPath() throws IOException {
+	return impl.getCanonicalPath();
     }
 
     public InputStream getInputStream() throws IOException {
@@ -88,9 +90,25 @@ public class PrivilegedFileIO {
 	return (InputStream)proxy.invokeMethod(new Object[]{}, "getInputStream", sig);
     }
 
+    public String getName() {
+	return impl.getName();
+    }
+
     public OutputStream getOutputStream() throws IOException {
 	final String sig = "()Ljava/io/OutputStream;";
 	return (OutputStream)proxy.invokeMethod(new Object[]{}, "getOutputStream", sig);
+    }
+
+    public String getParent() {
+	return impl.getParent();
+    }
+
+    public String getPath() {
+	return impl.getPath();
+    }
+
+    public int hashCode() {
+	return impl.hashCode();
     }
 
     public boolean isAbsolute() {
@@ -124,6 +142,15 @@ public class PrivilegedFileIO {
     public boolean mkdir() {
 	Boolean b = (Boolean)proxy.invokeMethod(new Object[]{}, "mkdir", "()Z");
 	return b.booleanValue();
+    }
+
+    public boolean mkdirs() {
+	Boolean b = (Boolean)proxy.invokeMethod(new Object[]{}, "mkdirs", "()Z");
+	return b.booleanValue();
+    }
+
+    public String toString() {
+	return impl.toString();
     }
 }
 
