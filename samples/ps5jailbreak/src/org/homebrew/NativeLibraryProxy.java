@@ -35,6 +35,10 @@ public class NativeLibraryProxy {
 	    }
 	    return super.findEntry(name);
 	}
+
+        boolean load(String name, boolean b) {
+            return super.load0(name, b);
+        }
     }
     */
 
