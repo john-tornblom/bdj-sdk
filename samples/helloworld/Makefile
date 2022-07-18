@@ -24,11 +24,11 @@ MAKEFILE_DIR := $(dir $(realpath $(lastword $(MAKEFILE_LIST))))
 BDJSDK_HOME  ?= $(MAKEFILE_DIR)/../../
 BDSIGNER     := $(BDJSDK_HOME)/host/bin/bdsigner
 MAKEFS       := $(BDJSDK_HOME)/host/bin/makefs
-JAVA_HOME    ?= $(BDJSDK_HOME)/host/jdk
-JAVAC        := $(JAVA_HOME)/bin/javac
-JAR          := $(JAVA_HOME)/bin/jar
+JAVA8_HOME    ?= $(BDJSDK_HOME)/host/jdk8
+JAVAC        := $(JAVA8_HOME)/bin/javac
+JAR          := $(JAVA8_HOME)/bin/jar
 
-export JAVA_HOME
+export JAVA8_HOME
 
 
 #

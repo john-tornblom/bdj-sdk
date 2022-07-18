@@ -1,4 +1,5 @@
 *~
 host/bin/makefs
 host/jdk
-
+host/jdk8
+host/jdk11

@@ -40,43 +40,58 @@ public class LoggingUI extends Container {
     }
 
     public void log(String msg) {
-	rows.add(msg);
-	if(rows.size() > 45) {
+	StringBuffer sb = new StringBuffer();
+
+	int col = 0;
+	for(int i=0; i<msg.length(); i++) {
+	    char ch = msg.charAt(i);
+
+	    switch(ch) {
+	    case '\t':
+		sb.append("    ");
+		col += 4;
+		break;
+
+	    case '\n':
+		rows.add(sb.toString());
+		sb = new StringBuffer();
+		col = 0;
+		break;
+
+	    default:
+		sb.append(ch);
+		col++;
+		break;
+	    }
+
+	    if(col >= 180) {
+		rows.add(sb.toString());
+		sb = new StringBuffer();
+		col = 0;
+	    }
+	}
+
+	if(sb.length() > 0) {
+	    rows.add(sb.toString());
+	}
+
+	while(rows.size() > 44) {
 	    rows.remove(0);
 	}
+
 	repaint();
     }
 
     public void log(Throwable t) {
 	StringWriter sw = new StringWriter();
 	PrintWriter pw = new PrintWriter(sw);
-	StringBuffer sb = new StringBuffer();
 
 	t.printStackTrace(pw);
-	String st = sw.toString();
+	log(sw.toString());
+    }
 
-	for(int i=0; i<st.length(); i++) {
-	    char ch = st.charAt(i);
-
-	    switch(ch) {
-	    case '\t':
-		sb.append("    ");
-		break;
-
-	    case '\n':
-		log(sb.toString());
-		sb = new StringBuffer();
-		break;
-
-	    default:
-		sb.append(ch);
-		break;
-	    }
-	}
-
-	if(sb.length() > 0) {
-	    log(sb.toString());
-	}
+    public void log(Object obj) {
+	log(obj.toString());
     }
 }
 

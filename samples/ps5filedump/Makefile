@@ -7,19 +7,20 @@ MAKEFILE_DIR := $(dir $(realpath $(lastword $(MAKEFILE_LIST))))
 BDJSDK_HOME  ?= $(MAKEFILE_DIR)/../../
 BDSIGNER     := $(BDJSDK_HOME)/host/bin/bdsigner
 MAKEFS       := $(BDJSDK_HOME)/host/bin/makefs
-JAVA_HOME    ?= $(BDJSDK_HOME)/host/jdk
-JAVAC        := $(JAVA_HOME)/bin/javac
-JAR          := $(JAVA_HOME)/bin/jar
+JAVA8_HOME   ?= $(BDJSDK_HOME)/host/jdk8
+JAVA11_HOME  ?= $(BDJSDK_HOME)/host/jdk11
+JAVAC        := $(JAVA11_HOME)/bin/javac
+JAR          := $(JAVA11_HOME)/bin/jar
 
-export JAVA_HOME
-
+export JAVA8_HOME
+export JAVA11_HOME
 
 #
 # Compilation artifacts
 #
 CLASSPATH     := $(BDJSDK_HOME)/target/lib/enhanced-stubs.zip:$(BDJSDK_HOME)/target/lib/sony-stubs.jar
 SOURCES       := $(wildcard src/org/homebrew/*.java)
-JFLAGS        := -Xlint:-options -source 1.3 -target 1.3
+JFLAGS        := -Xlint:-options
 
 
 #
