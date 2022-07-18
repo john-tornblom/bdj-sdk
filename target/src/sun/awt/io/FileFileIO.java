@@ -23,6 +23,18 @@ public class FileFileIO {
     public OutputStream getOutputStream() throws IOException {
 	return null;
     }
+
+    public String getAbsolutePath() {
+	return null;
+    }
+
+    public String getCanonicalPath() {
+	return null;
+    }
+
+    public String getParent() {
+	return null;
+    }
     
     public String canonPath(String path) throws IOException {
 	return null;
@@ -69,6 +81,10 @@ public class FileFileIO {
     }
     
     public boolean mkdir() {
+	return false;
+    }
+
+    public boolean mkdirs() {
 	return false;
     }
 }
