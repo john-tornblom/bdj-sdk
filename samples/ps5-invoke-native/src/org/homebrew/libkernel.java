@@ -7,6 +7,10 @@ public class libkernel {
 	lib = new NativeLibrary(0x2001);
     }
 
+    public static short getpid() {
+	return (short)lib.invoke("getpid");
+    }
+
     public static int sendNotificationRequest(String msg) {
 	long size = 0xc30;
 	long addr = NativeMemory.allocateMemory(size);

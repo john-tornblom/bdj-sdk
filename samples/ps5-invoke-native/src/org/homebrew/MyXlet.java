@@ -41,6 +41,8 @@ public class MyXlet extends Thread implements Xlet {
 	try {
 	    Thread.sleep(5000);
 	    PrivilegeEscalation.disableSecurityManager();
+	    LoggingUI.getInstance().log("java.version: " + System.getProperty("java.version"));
+	    LoggingUI.getInstance().log("pid: " + libkernel.getpid());
 	    libkernel.sendNotificationRequest("Hello, World!");
 	} catch (Throwable t) {
 	    LoggingUI.getInstance().log(t);
