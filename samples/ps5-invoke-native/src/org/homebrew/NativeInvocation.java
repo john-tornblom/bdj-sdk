@@ -7,12 +7,12 @@ public class NativeInvocation {
 
     static {
 	try {
-	    NativeLibrary libkernel = new NativeLibrary(0x2001);
-            getcontext = libkernel.findEntry("getcontext");
-	    setcontext = libkernel.findEntry("__Ux86_64_setcontext");
-
 	    NativeLibrary rtld = new NativeLibrary(-2);
 	    JVM_NativePath = rtld.findEntry("JVM_NativePath");
+
+	    NativeLibrary libkernel = new NativeLibrary(0x2001);
+	    getcontext = libkernel.findEntry("getcontext");
+	    setcontext = libkernel.findEntry("setcontext");
 
 	    long apiInstance = NativeMemory.addressOf(new NativeInvocation());
 	    long apiKlass = NativeMemory.getLong(apiInstance + 0x08);
@@ -30,7 +30,7 @@ public class NativeInvocation {
 		short signatureLength = NativeMemory.getShort(signatureSymbol + 0x00);
 		String name = NativeMemory.getString(nameSymbol + 0x06, nameLength);
 
-		if (name.equals("gadget")) {
+		if (name.equals("multiNewArray")) {
 		    NativeLibrary libjava = new NativeLibrary(0x4a);
 		    long addr = libjava.findEntry("Java_java_lang_reflect_Array_multiNewArray");
 		    NativeMemory.putLong(method + 0x50, addr);
@@ -42,35 +42,32 @@ public class NativeInvocation {
 	}
     }
 
-    private static native long gadget(long componentType, int[] dimensions);
+    private static native long multiNewArray(long componentType, int[] dimensions);
 
     public static long invoke(long func, long[] args) {
-	long fakeClassOop = NativeMemory.allocateMemory(80);
+	long fakeClassOop = NativeMemory.allocateMemory(8);
 	long fakeClass = NativeMemory.allocateMemory(0x200);
-	long fakeKlass = NativeMemory.allocateMemory(0x800);
-	long fakeKlassVtable = NativeMemory.allocateMemory(0x600);
-	int[] dimensions = new int[]{1};
+	long fakeKlass = NativeMemory.allocateMemory(0x500);
+	long fakeKlassVtable = NativeMemory.allocateMemory(0x400);
+	int[] dimensions = new int[]{0};
 
 	try {
 	    NativeMemory.putLong(fakeClassOop, fakeClass);
 	    NativeMemory.putLong(fakeClass + 0x98, fakeKlass);
-	    NativeMemory.putInt(fakeKlass + 0xC4, 0);
-	    NativeMemory.putLong(fakeKlassVtable + 0xD8, JVM_NativePath);
+	    NativeMemory.putInt(fakeKlass + 0xc4, 0);
 	    NativeMemory.putLong(fakeKlass, fakeKlassVtable);
+	    NativeMemory.putLong(fakeKlassVtable + 0xd8, JVM_NativePath);
 	    NativeMemory.putLong(fakeKlassVtable + 0x158, getcontext);
-	    gadget(fakeClassOop, dimensions);
+	    multiNewArray(fakeClassOop, dimensions);
 
-	    NativeMemory.putLong(fakeKlass, fakeKlassVtable);
 	    NativeMemory.putLong(fakeKlassVtable + 0x158, setcontext);
-
+	    NativeMemory.setMemory(fakeKlass, 0x500, (byte)0);
+	    NativeMemory.putLong(fakeKlass, fakeKlassVtable);
 	    NativeMemory.putLong(fakeKlass + 0xe0, func);
-	    NativeMemory.putLong(fakeKlass + 0x110, 0);
-	    NativeMemory.putLong(fakeKlass + 0x118, 0);
 	    for(int i=0; i<Math.min(args.length, 6); i++) {
 		NativeMemory.putLong(fakeKlass + 0x48 + (i * 8), args[i]);
 	    }
-
-	    long ptr = gadget(fakeClassOop, dimensions);
+	    long ptr = multiNewArray(fakeClassOop, dimensions);
 	    if(ptr != 0) {
 		return NativeMemory.getLong(ptr);
 	    } else {
