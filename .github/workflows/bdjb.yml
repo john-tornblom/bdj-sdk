@@ -38,7 +38,7 @@ jobs:
       with:
         path: samples/ps5-invoke-native/*.iso
         name: ps5-invoke-native
-	
+
     - name: Upload ps5-sandbox-filedump artifact
       uses: actions/upload-artifact@v3
       with:
