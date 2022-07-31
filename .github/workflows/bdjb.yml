@@ -25,15 +25,20 @@ jobs:
 
     - name: Make
       run: |
-        # up dir to workaround path bug
-        cd ..
-        make -C bdj-sdk/host/src/makefs_termux
-        make -C bdj-sdk/host/src/makefs_termux install DESTDIR=$PWD/bdj-sdk/host
-        make -C bdj-sdk/target
-        make -C bdj-sdk/samples/helloworld
-        make -C bdj-sdk/samples/ps5-app0-filedump
-        make -C bdj-sdk/samples/ps5-sandbox-filedump
+        make -C host/src/makefs_termux
+        make -C host/src/makefs_termux install DESTDIR=$PWD/host
+        make -C target
+        make -C samples/helloworld
+        make -C samples/ps5-app0-filedump
+        make -C samples/ps5-sandbox-filedump
+        make -C samples/ps5-invoke-native
 
+    - name: Upload ps5-invoke-native artifact
+      uses: actions/upload-artifact@v3
+      with:
+        path: samples/ps5-invoke-native/*.iso
+        name: ps5-invoke-native
+	
     - name: Upload ps5-sandbox-filedump artifact
       uses: actions/upload-artifact@v3
       with:
