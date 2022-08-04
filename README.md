@@ -2,7 +2,7 @@
 This is a set of tools to simplify building BD-J ISO images on GNU/Linux systems.
 It is an adaptation of the Win32 [minimal BD-J toolkit for the PS3][ps3],
 with an updated authoring tool from [the HD Cookbook][hdc]. For creating ISO
-images, we use a [Linux port][makefs_termux] of [FreeBSD makefs][makefs] ported
+images, we use a [Linux port][makefs_termux] of [NetBSD makefs][makefs] ported
 by [Andrew Randrianasulu][Randrianasulu].
 
 ## Building
@@ -29,5 +29,5 @@ If everything was built successfully, you will find an BD-RE iso file
 [ps3]: https://ps3.brewology.com/downloads/download.php?id=2171&mcid=4
 [hdc]: http://oliverlietz.github.io/bd-j/hdcookbook.html
 [makefs_termux]: https://github.com/Randrianasulu/makefs_termux
-[makefs]: https://www.freebsd.org/cgi/man.cgi?query=makefs
+[makefs]: https://man.netbsd.org/makefs.8
 [Randrianasulu]: https://github.com/Randrianasulu
