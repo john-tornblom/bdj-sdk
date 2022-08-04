@@ -1,4 +1,9 @@
 # BD-J Linux SDK
+This is a set of tools to simplify building BD-J ISO images on GNU/Linux systems.
+It is an adaptation of the Win32 [minimal BD-J toolkit for the PS3][ps3],
+with an updated authoring tool from [the HD Cookbook][hdc]. For creating ISO
+images, we use a [Linux port][makefs_termux] of [FreeBSD makefs][makefs] ported
+by [Andrew Randrianasulu][Randrianasulu].
 
 ## Building
 On Debian-flavored operating systems, you can invoke the following commands to
@@ -21,3 +26,8 @@ john@localhost:~$ make -C bdj-sdk/samples/helloworld
 If everything was built successfully, you will find an BD-RE iso file
 `bdj-sdk/samples/helloworld/helloworld.iso`
 
+[ps3]: https://ps3.brewology.com/downloads/download.php?id=2171&mcid=4
+[hdc]: http://oliverlietz.github.io/bd-j/hdcookbook.html
+[makefs_termux]: https://github.com/Randrianasulu/makefs_termux
+[makefs]: https://www.freebsd.org/cgi/man.cgi?query=makefs
+[Randrianasulu]: https://github.com/Randrianasulu
