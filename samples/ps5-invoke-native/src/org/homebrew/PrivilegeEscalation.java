@@ -121,24 +121,18 @@ public class PrivilegeEscalation  {
 	}
     }
 
-    public static boolean openModulePackage(String moduleName, String packageName, Class clazz) {
+    public static boolean openModuleToAllUnnamed(String className) {
 	try {
-	    Method getModule = Class.class.getDeclaredMethod("getModule", new Class[0]);
-	    Field openPackages = Module.class.getDeclaredField("openPackages");
+	    Class clazz = Class.forName(className);
+	    Class ModuleClass = Class.forName("java.lang.Module");
+	    Method getModuleMethod = Class.class.getDeclaredMethod("getModule", new Class[0]);
+	    getModuleMethod.setAccessible(true);
 
-	    openPackages.setAccessible(true);
-	    getModule.setAccessible(true);
-
-	    Module classModule = (Module)getModule.invoke(clazz);
-	    for(Module module : ModuleLayer.boot().modules()) {
-		if(moduleName.equals(module.getName())) {
-		    Map pkgs = (Map)openPackages.get(module);
-		    Set own = new HashSet();
-		    own.add(classModule);
-		    pkgs.put(packageName, own);
-		    return true;
-		}
-	    }
+	    Object module = getModuleMethod.invoke(clazz);
+	    Method method = ModuleClass.getDeclaredMethod("implAddOpensToAllUnnamed", new Class[]{String.class});
+	    method.setAccessible(true);
+	    method.invoke(module, new Object[] {clazz.getPackage().getName()});
+	    return true;
 	} catch (Throwable t) {
 	    LoggingUI.getInstance().log(t);
 	}

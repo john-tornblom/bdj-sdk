@@ -7,8 +7,8 @@ public class libkernel {
 	lib = new NativeLibrary(0x2001);
     }
 
-    public static short getpid() {
-	return (short)lib.invoke("getpid");
+    public static int getpid() {
+	return (int)lib.invoke("getpid");
     }
 
     public static int sendNotificationRequest(String msg) {
@@ -19,10 +19,10 @@ public class libkernel {
 	NativeMemory.putInt(addr + 0x10, -1);
 	NativeMemory.putString(addr + 0x2d, msg);
 
-	lib.invoke("sceKernelSendNotificationRequest", 0, addr, size, 0);
+	long res = lib.invoke("sceKernelSendNotificationRequest", 0, addr, size, 0);
 
 	NativeMemory.freeMemory(addr);
 
-	return -1;
+	return (int)res;
     }
 }

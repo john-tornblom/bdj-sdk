@@ -12,7 +12,7 @@ public class NativeInvocation {
 
 	    NativeLibrary libkernel = new NativeLibrary(0x2001);
 	    getcontext = libkernel.findEntry("getcontext");
-	    setcontext = libkernel.findEntry("setcontext");
+	    setcontext = libkernel.findEntry("__Ux86_64_setcontext");
 
 	    long apiInstance = NativeMemory.addressOf(new NativeInvocation());
 	    long apiKlass = NativeMemory.getLong(apiInstance + 0x08);
@@ -61,12 +61,15 @@ public class NativeInvocation {
 	    multiNewArray(fakeClassOop, dimensions);
 
 	    NativeMemory.putLong(fakeKlassVtable + 0x158, setcontext);
-	    NativeMemory.setMemory(fakeKlass, 0x500, (byte)0);
 	    NativeMemory.putLong(fakeKlass, fakeKlassVtable);
+
 	    NativeMemory.putLong(fakeKlass + 0xe0, func);
+	    NativeMemory.putLong(fakeKlass + 0x110, 0);
+	    NativeMemory.putLong(fakeKlass + 0x118, 0);
 	    for(int i=0; i<Math.min(args.length, 6); i++) {
 		NativeMemory.putLong(fakeKlass + 0x48 + (i * 8), args[i]);
 	    }
+
 	    long ptr = multiNewArray(fakeClassOop, dimensions);
 	    if(ptr != 0) {
 		return NativeMemory.getLong(ptr);
