@@ -32,6 +32,13 @@ jobs:
         make -C samples/ps5-app0-filedump
         make -C samples/ps5-sandbox-filedump
         make -C samples/ps5-invoke-native
+        make -C samples/ps5-lua-server
+
+    - name: Upload ps5-lua-server artifact
+      uses: actions/upload-artifact@v3
+      with:
+        path: samples/ps5-lua-server/*.iso
+        name: ps5-lua-server
 
     - name: Upload ps5-invoke-native artifact
       uses: actions/upload-artifact@v3
