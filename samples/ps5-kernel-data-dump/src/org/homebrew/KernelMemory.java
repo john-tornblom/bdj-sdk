@@ -18,10 +18,6 @@ public class KernelMemory {
     private static final int IPV6_RTHDR = 51;
     private static final int IPV6_PKTINFO = 46;
     private static final int IPV6_2292PKTOPTIONS = 25;
-    private static final int O_RDWR = 2;
-    private static final int SEEK_SET = 0;
-    private static final int PAGE_SIZE = 16384;
-    private static final int DTYPE_SOCKET = 2;
     private static final int EVFILT_READ = -1;
     private static final int EV_ADD = 1;
     private static final int RTP_SET = 1;
@@ -29,7 +25,7 @@ public class KernelMemory {
     private static final int CPU_LEVEL_WHICH = 3;
     private static final int CPU_WHICH_TID = 1;
     private static final short RTP_PRIO_REALTIME = 2;
-    
+
     // auxillary macros
     private static final int TCLASS_MASTER = 0x13370000;
     private static final int TCLASS_TAINT = 0x42;
@@ -40,29 +36,16 @@ public class KernelMemory {
     private static final int NUM_KQUEUES = 0x96;
 
     private static final int IN6_PKTINFO_SIZE = 20;
-    private static final int FILE_SIZE = 80;
     private static final int KEVENT_SIZE = 64;
 
     private static final int PKTOPTS_PKTINFO_OFFSET = 16;
     private static final int PKTOPTS_RTHDR_OFFSET = 112;
     private static final int PKTOPTS_TCLASS_OFFSET = 192;
-    private static final int PROC_LIST_OFFSET = 0;
-    private static final int PROC_UCRED_OFFSET = 64;
-    private static final int PROC_FD_OFFSET = 72;
-    private static final int PROC_PID_OFFSET = 188;
-    private static final int FILEDESC_OFILES_OFFSET = 0;
-    private static final int FILEDESC_NFILES_OFFSET = 0;
-    private static final int FILE_TYPE_OFFSET = 32;
-    private static final int FILE_DATA_OFFSET = 0;
-    private static final int KNOTE_FOP_OFFSET = 104;
-    private static final int FILTEROPS_DETACH_OFFSET = 16;
-    private static final int SOCKET_PCB_OFFSET = 16;
-    private static final int INPCB_OUTPUTOPTS_OFFSET = 288;
 
     private static long kevent_addr = 0;
     private static long pktopts_addr = 0;
     private static long kernel_base = 0;
-    
+
     static int kevent_sock = -1;
     static int master_sock = -1;
     static int overlap_sock = -1;
@@ -424,7 +407,7 @@ public class KernelMemory {
 	    buf = NativeMemory.allocateMemory(0x800);
 	    NativeMemory.setMemory(buf, 0x800, (byte) 0);
 	    
-	    for (;;) {
+	    while(true) {
 		mems_set.clear();
 		int fd = -1;
 		for (int i = 0; i < 10000; i++) {
