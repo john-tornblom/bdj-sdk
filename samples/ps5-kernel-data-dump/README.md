@@ -22,7 +22,7 @@ Usage:
 ```console
 john@localhost:~$ echo 0x1000000 | nc PS5IP 5656 > kernel.data
 ```
-where 0x1000000 is the number of bytes to bump.
+where 0x1000000 is the number of bytes to dump.
 
 [h1]: https://hackerone.com/reports/1379975
 [insp1]: https://github.com/sleirsgoevy/bd-jb
