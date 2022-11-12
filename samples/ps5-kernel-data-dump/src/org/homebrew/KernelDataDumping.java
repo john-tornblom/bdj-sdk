@@ -1,15 +1,11 @@
 package org.homebrew;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.PrintStream;
-import java.io.DataOutputStream;
-import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.math.BigInteger;
 
 public class KernelDataDumping {
 
@@ -27,7 +23,6 @@ public class KernelDataDumping {
     }
 
     private static void serve(final Socket s) throws Exception {
-        final PrintStream err = new PrintStream(s.getOutputStream());
         new Thread(new Runnable() {
             public void run() {
                 try {
