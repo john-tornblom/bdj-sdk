@@ -33,7 +33,14 @@ jobs:
         make -C samples/ps5-sandbox-filedump
         make -C samples/ps5-invoke-native
         make -C samples/ps5-lua-server
+        make -C samples/ps5-kernel-data-dump
 
+    - name: Upload ps5-kernel-data-dump artifact
+      uses: actions/upload-artifact@v3
+      with:
+        path: samples/ps5-kernel-data-dump/*.iso
+        name: ps5-kernel-data-dump
+	
     - name: Upload ps5-lua-server artifact
       uses: actions/upload-artifact@v3
       with:
