@@ -40,7 +40,7 @@ jobs:
       with:
         path: samples/ps5-kernel-data-dump/*.iso
         name: ps5-kernel-data-dump
-	
+
     - name: Upload ps5-lua-server artifact
       uses: actions/upload-artifact@v3
       with:
