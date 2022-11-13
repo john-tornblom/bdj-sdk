@@ -43,11 +43,18 @@ public class MyXlet extends Thread implements Xlet {
 	try {
 	    PrivilegeEscalation.disableSecurityManager();
 	    KernelMemory.enableRW();
-	    LoggingUI.getInstance().log("dumping server is listening on port " + PORT);
+	    KernelPatching.enableDebugMenu();
+	} catch (Throwable t) {
+	    LoggingUI.getInstance().log(t);
+	}
+
+	try {
+	    LoggingUI.getInstance().log("launching kernel dump server on port " + PORT);
 	    KernelDataDumping.run(PORT);
 	} catch (Throwable t) {
 	    LoggingUI.getInstance().log(t);
 	}
     }
 }
+
 
