@@ -14,6 +14,11 @@ public class NativeInvocation {
 	    getcontext = libkernel.findEntry("getcontext");
 	    setcontext = libkernel.findEntry("__Ux86_64_setcontext");
 
+	    NativeLibrary libjava = new NativeLibrary(0x4a);
+	    if("11.0.7-internal".equals(System.getProperty("java.version"))) {
+		libjava = new NativeLibrary(0x4b);
+	    }
+	    
 	    long apiInstance = NativeMemory.addressOf(new NativeInvocation());
 	    long apiKlass = NativeMemory.getLong(apiInstance + 0x08);
 	    long methods = NativeMemory.getLong(apiKlass + 0x170);
@@ -31,7 +36,6 @@ public class NativeInvocation {
 		String name = NativeMemory.getString(nameSymbol + 0x06, nameLength);
 
 		if (name.equals("multiNewArray")) {
-		    NativeLibrary libjava = new NativeLibrary(0x4a);
 		    long addr = libjava.findEntry("Java_java_lang_reflect_Array_multiNewArray");
 		    NativeMemory.putLong(method + 0x50, addr);
 		    break;
