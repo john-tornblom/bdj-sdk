@@ -34,6 +34,20 @@ jobs:
         make -C samples/ps5-invoke-native
         make -C samples/ps5-lua-server
         make -C samples/ps5-kernel-data-dump
+        make -C samples/ps5-jar-loader
+        make -C samples/ps5-elf-loader
+
+    - name: Upload ps5-elf-loader artifact
+      uses: actions/upload-artifact@v3
+      with:
+        path: samples/ps5-elf-loader/*.iso
+        name: ps5-elf-loader
+
+    - name: Upload ps5-jar-loader artifact
+      uses: actions/upload-artifact@v3
+      with:
+        path: samples/ps5-jar-loader/*.iso
+        name: ps5-jar-loader
 
     - name: Upload ps5-kernel-data-dump artifact
       uses: actions/upload-artifact@v3
