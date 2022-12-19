@@ -1,13 +1,13 @@
 PS5_HOST ?= ps5
 PS5_PORT ?= 9020
 
-CC     := clang
-CFLAGS := -target x86_64-none-elf -fno-builtin -nostdlib -fPIC -static
+CC     ?= cc
+CFLAGS := -ffreestanding -fno-builtin -nostdlib -static
 
 all: getpid.elf
 
 getpid.elf: getpid.c
-	$(CC) $(CFLAGS) -o $@ $< -Xlinker -T linker.x -Wl,--build-id=none
+	$(CC) $(CFLAGS) -o $@ $< -Xlinker -T linker.x
 
 clean:
 	rm -f getpid.elf

@@ -7,6 +7,10 @@ public class libkernel {
 	lib = NativeLibrary.load(0x2001);
     }
 
+    public static long addressOf(String symbol) {
+	return lib.findEntry(symbol);
+    }
+    
     public static int __error() {
 	return (int)lib.invoke("__error");
     }

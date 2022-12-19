@@ -1,14 +1,45 @@
 package org.homebrew;
 
 import java.io.ByteArrayOutputStream;
+import java.io.FileDescriptor;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import jdk.internal.access.SharedSecrets;
 
 public class ElfLoadingServer {
+    static final long arg_addr;
+    
+    static {
+	long payload_output_addr = NativeMemory.allocateMemory(8);
+	long pipe_rw_fds = NativeMemory.allocateMemory(8);
+	long kern_rw_fds = NativeMemory.allocateMemory(8);
+		
+	arg_addr = NativeMemory.allocateMemory(0x30);
+		
+	NativeMemory.putInt(kern_rw_fds + 0, KernelMemory.getMasterSocket());
+	NativeMemory.putInt(kern_rw_fds + 4, KernelMemory.getVictimSocket());
+		
+	NativeMemory.putInt(pipe_rw_fds + 0, KernelMemory.getPipeRead());
+	NativeMemory.putInt(pipe_rw_fds + 4, KernelMemory.getPipeWrite());
+		
+	NativeMemory.putLong(arg_addr + 0x00, libkernel.addressOf("sceKernelDlsym"));
+	NativeMemory.putLong(arg_addr + 0x08, pipe_rw_fds);
+	NativeMemory.putLong(arg_addr + 0x10, kern_rw_fds);
+	NativeMemory.putLong(arg_addr + 0x28, payload_output_addr);
 
+	try {
+	    NativeMemory.putLong(arg_addr + 0x18, KernelMemory.getPipeAddress());
+	    NativeMemory.putLong(arg_addr + 0x20, KernelMemory.getBaseAddress());
+	} catch(Throwable t) {
+	    NativeMemory.putLong(arg_addr + 0x18, 0);
+	    NativeMemory.putLong(arg_addr + 0x20, 0);
+	}
+    }
+    
     public static void spawn(int port) {
         new Thread(new Runnable() {
 		public void run() {
@@ -104,6 +135,8 @@ public class ElfLoadingServer {
 	final int MAP_ANONYMOUS = 0x1000;
 	
 	final long elf_size = SIZE_ELF_HEAD + (SIZE_ELF_PROG_HEAD * 0x10) + 0x200000;
+	final long mapping_addr = 0x926100000l;
+	final long shadow_addr = 0x920100000l;
 	
 	long elf_addr = 0;
 	long ret_addr = 0;
@@ -115,8 +148,10 @@ public class ElfLoadingServer {
 	int text_size = 0;
         int data_size = 0;
 	
-	int main_fd = 0;
-	int alias_fd = 0;
+	int text_rw_fd = 0;
+	int text_rx_fd = 0;
+
+	PrintStream ps = new PrintStream(os);
 	
 	if(elf_bytes[0] != (byte)0x7f || elf_bytes[1] != (byte)0x45 ||
 	   elf_bytes[2] != (byte)0x4c || elf_bytes[3] != (byte)0x46) {
@@ -149,65 +184,64 @@ public class ElfLoadingServer {
 		    if((prog_flags & 1) == 1) {
 			text_size = aligned_memsz;
 
-			int prot = PROT_READ | PROT_WRITE | PROT_EXEC;
-			if(libkernel.jitCreateSharedMemory(0, aligned_memsz, prot,
+			// Get exec fd
+			if(libkernel.jitCreateSharedMemory(0, aligned_memsz,
+							   PROT_READ | PROT_WRITE | PROT_EXEC,
 							   ret_addr) != 0) {
 			    throw new Exception(libcInternal.strerror());
 			}
-
-			if((main_fd = NativeMemory.getInt(ret_addr)) == 0) {
+			if((text_rx_fd = NativeMemory.getInt(ret_addr)) == 0) {
 			    throw new Exception(libcInternal.strerror());
 			}
 
-			prot = PROT_READ | PROT_WRITE;
-			if(libkernel.jitCreateAliasOfSharedMemory(main_fd, prot,
+			// Get write fd
+			if(libkernel.jitCreateAliasOfSharedMemory(text_rx_fd,
+								  PROT_READ | PROT_WRITE,
 								  ret_addr) != 0) {
 			    throw new Exception(libcInternal.strerror());
 			}
+			if((text_rw_fd = NativeMemory.getInt(ret_addr)) == 0) {
+			    throw new Exception(libcInternal.strerror());
+			}
 			
-			if((alias_fd = NativeMemory.getInt(ret_addr)) == 0) {
+			// Map exec segment
+			if((text_rx_addr = libkernel.mmap(0x926100000l + prog_vaddr,
+							  aligned_memsz,
+							  PROT_READ | PROT_EXEC,
+							  MAP_FIXED | MAP_SHARED,
+							  text_rx_fd, 0)) == -1) {
 			    throw new Exception(libcInternal.strerror());
 			}
 
-			prot = PROT_READ | PROT_EXEC;
-			long addr = 0xc00000000l;
-			if((text_rx_addr = libkernel.mmap(addr, aligned_memsz,
-							  prot, MAP_SHARED,
-							  main_fd, 0)) == -1) {
+			// Map write segment
+			if((text_rw_addr = libkernel.mmap(shadow_addr,
+							  aligned_memsz,
+							  PROT_READ | PROT_WRITE,
+							  MAP_FIXED | MAP_SHARED,
+							  text_rw_fd, 0)) == -1) {
 			    throw new Exception(libcInternal.strerror());
 			}
 
-			prot = PROT_READ | PROT_WRITE;
-			if(libkernel.jitMapSharedMemory(alias_fd, prot,
-							ret_addr) != 0) {
-			    throw new Exception(libcInternal.strerror());
-			}
-
-			if((text_rw_addr=NativeMemory.getLong(ret_addr)) == 0) {
-			    throw new Exception(libcInternal.strerror());
-			}
-
+			// Copy in segment data
 			for(int j=0; j<prog_memsz; j+=8) {
-			    long v = NativeMemory.getLong(elf_addr +
-							  prog_off + j);
+			    long v = NativeMemory.getLong(elf_addr + prog_off + j);
 			    NativeMemory.putLong(text_rw_addr + j, v);
 			}
-
 		    } else {
-			// Regular data segment
 			data_size = aligned_memsz;
-			long addr = text_rx_addr + prog_vaddr;
-			int prot = PROT_READ | PROT_WRITE;
-			int flags = MAP_ANONYMOUS | MAP_FIXED | MAP_PRIVATE;
-			if((data_rw_addr = libkernel.mmap(addr, data_size, prot,
-							  flags, -1, 0)) == -1) {
+
+			// Map write segment
+			if((data_rw_addr = libkernel.mmap(mapping_addr + prog_vaddr,
+							  aligned_memsz,
+							  PROT_READ | PROT_WRITE,
+							  MAP_ANONYMOUS | MAP_FIXED | MAP_PRIVATE,
+							  -1, 0)) == -1) {
 			    throw new Exception(libcInternal.strerror());
 			}
 
 			// Copy in segment data
 			for (int j=0; j<prog_memsz; j+=8) {
-			    long v = NativeMemory.getLong(elf_addr +
-							  prog_off + j);
+			    long v = NativeMemory.getLong(elf_addr + prog_off + j);
 			    NativeMemory.putLong(data_rw_addr + j, v);
 			}
 		    }
@@ -216,17 +250,21 @@ public class ElfLoadingServer {
 	    
 	    if(text_rx_addr != 0) {
 		long args[] = new long[6];
-		long func = text_rx_addr + elf_entry_point;
-
-		args[0] = NativeLibrary.load(0x2001).findEntry("sceKernelDlsym");
-		args[1] = 0;
+		long func = mapping_addr + elf_entry_point;
+		FileOutputStream fos = (FileOutputStream)os;
+		FileDescriptor fd = fos.getFD();
+		
+		args[0] = arg_addr;
+		args[1] = SharedSecrets.getJavaIOFileDescriptorAccess().get(fd);
 		args[2] = 0;
 		args[3] = 0;
 		args[4] = 0;
 		args[5] = 0;
-		
+
+		ps.println("invoke: " + func);
 		long rc = NativeInvocation.invoke(func, args);
-		new PrintStream(os).println("exit code: " + rc);
+		ps.println("exit code: " + rc);
+
 	    } else {
 		throw new IOException("Invalid ELF file");
 	    }
@@ -240,12 +278,12 @@ public class ElfLoadingServer {
 		NativeMemory.freeMemory(ret_addr);
 	    }
 
-	    if(main_fd != 0) {
-		libkernel.close(main_fd);
+	    if(text_rx_fd != 0) {
+		libkernel.close(text_rx_fd);
 	    }
-
-	    if(alias_fd != 0) {
-		libkernel.close(alias_fd);
+	    
+	    if(text_rw_fd != 0) {
+		libkernel.close(text_rw_fd);
 	    }
 
 	    if(text_rw_addr != 0) {

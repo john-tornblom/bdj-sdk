@@ -5,6 +5,10 @@ public class SharedSecrets {
         return null;
     }
 
-    public static void setJavaSecurityAccess(JavaSecurityAccess access){
+    public static void setJavaSecurityAccess(JavaSecurityAccess access) {
+    }
+
+    public static JavaIOFileDescriptorAccess getJavaIOFileDescriptorAccess() {
+	return null;
     }
 }

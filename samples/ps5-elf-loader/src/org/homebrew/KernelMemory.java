@@ -639,6 +639,29 @@ public class KernelMemory {
     public static long getProcAddress() throws IOException {
 	return getProcAddress(libkernel.getpid());
     }
+
+    public static long getPipeAddress() throws IOException {
+	if(pipe_addr == 0) {
+	    throw new IOException("Invalid pipe address");
+	}
+	return pipe_addr;
+    }
+
+    public static int getPipeRead() {
+	return pipe_read;
+    }
+
+    public static int getPipeWrite() {
+	return pipe_write;
+    }
+    
+    public static int getMasterSocket() {
+	return master_sock;
+    }
+
+    public static int getVictimSocket() {
+	return victim_sock;
+    }
     
     public static byte getByte(long addr) throws IOException {
 	if(kernel_base == 0) {
