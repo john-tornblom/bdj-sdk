@@ -85,8 +85,8 @@ int (*dup)(int);
  * Macro to initialize a function from a shared object.
  **/
 #define DLSYM(fd, sym) if(!sceKernelDlsym || \
-			  sceKernelDlsym(fd, #sym, &sym)) {\
-    return 1;}
+			  sceKernelDlsym(fd, #sym, &sym)) \
+    {return 1;}
 
 
 /**
