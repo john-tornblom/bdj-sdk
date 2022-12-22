@@ -36,12 +36,15 @@ jobs:
         make -C samples/ps5-kernel-data-dump
         make -C samples/ps5-jar-loader
         make -C samples/ps5-elf-loader
+        make -C samples/ps5-elf-loader/payloads
 
     - name: Upload ps5-elf-loader artifact
       uses: actions/upload-artifact@v3
       with:
-        path: samples/ps5-elf-loader/*.iso
         name: ps5-elf-loader
+        path: |
+          samples/ps5-elf-loader/*.iso
+          samples/ps5-elf-loader/payloads/*.elf
 
     - name: Upload ps5-jar-loader artifact
       uses: actions/upload-artifact@v3
