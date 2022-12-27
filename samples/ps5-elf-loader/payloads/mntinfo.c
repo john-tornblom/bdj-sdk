@@ -184,7 +184,7 @@ _start(payload_args_t *args, int sock_fd) {
 
   // resore stdout and stderr
   dup2(stdout_fd, STDOUT_FILENO);
-  dup2(stdout_fd, STDERR_FILENO);
+  dup2(stderr_fd, STDERR_FILENO);
 
   return exit_code;
 }
