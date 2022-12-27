@@ -1,0 +1,4 @@
+META-INF
+discdir
+*.o
+*.elf
