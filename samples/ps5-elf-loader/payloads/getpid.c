@@ -10,16 +10,11 @@ typedef struct payload_args {
 
 
 int (*getpid)();
-long (*write)(int, const void*, int);
 
 /**
  * Entry-point for the ELF loader.
  **/
 int _start(payload_args_t *args, int fd) {
   args->sceKernelDlsym(0x2001, "getpid", &getpid);
-  args->sceKernelDlsym(0x2001, "write", &write);
-  
-  write(fd, "Hello, world!\n", 14);
-  
   return getpid();
 }

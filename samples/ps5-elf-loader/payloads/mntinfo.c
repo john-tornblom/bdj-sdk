@@ -77,8 +77,6 @@ void (*free)(void *);
  **/
 void* (*sceKernelDlsym)(int, const char*, void*) = 0;
 int (*getfsstat)(struct statfs *, long, int);
-int (*dup2)(int, int);
-int (*dup)(int);
 
 
 /**
@@ -168,23 +166,7 @@ _start(payload_args_t *args, int sock_fd) {
   DLSYM(0x2, perror);
   DLSYM(0x2, free);
 
-  DLSYM(0x2001, dup);
-  DLSYM(0x2001, dup2);
   DLSYM(0x2001, getfsstat);
 
-  // backup stdout and stderr
-  stdout_fd = dup(STDOUT_FILENO);
-  stderr_fd = dup(STDERR_FILENO);
-
-  // redirect stdout and stderr to socket
-  dup2(sock_fd, STDOUT_FILENO);
-  dup2(sock_fd, STDERR_FILENO);
-
-  exit_code = main();
-
-  // resore stdout and stderr
-  dup2(stdout_fd, STDOUT_FILENO);
-  dup2(stderr_fd, STDERR_FILENO);
-
-  return exit_code;
+  return main();
 }

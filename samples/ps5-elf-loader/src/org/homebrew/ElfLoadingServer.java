@@ -205,7 +205,7 @@ public class ElfLoadingServer {
 			}
 			
 			// Map exec segment
-			if((text_rx_addr = libkernel.mmap(0x926100000l + prog_vaddr,
+			if((text_rx_addr = libkernel.mmap(mapping_addr + prog_vaddr,
 							  aligned_memsz,
 							  PROT_READ | PROT_EXEC,
 							  MAP_FIXED | MAP_SHARED,
@@ -252,19 +252,30 @@ public class ElfLoadingServer {
 		long args[] = new long[6];
 		long func = mapping_addr + elf_entry_point;
 		FileOutputStream fos = (FileOutputStream)os;
-		FileDescriptor fd = fos.getFD();
+		int sock_fd = SharedSecrets.getJavaIOFileDescriptorAccess().get(fos.getFD());
+
+		// backup stdout and stderr
+		int stdout_fd = libkernel.dup(1);
+		int stderr_fd = libkernel.dup(2);
+
+		// redirect stdout and stderr to socket
+		libkernel.dup2(sock_fd, 1);
+		libkernel.dup2(sock_fd, 2);
 		
 		args[0] = arg_addr;
-		args[1] = SharedSecrets.getJavaIOFileDescriptorAccess().get(fd);
+		args[1] = 0;
 		args[2] = 0;
 		args[3] = 0;
 		args[4] = 0;
 		args[5] = 0;
 
-		ps.println("invoke: " + func);
-		long rc = NativeInvocation.invoke(func, args);
-		ps.println("exit code: " + rc);
+		ps.println("entry_addr: 0x" + Long.toHexString(func));
+		int rc = (int)NativeInvocation.invoke(func, args);
+		ps.println("return_val: 0x" + Long.toHexString(rc));
 
+		// resore stdout and stderr
+		libkernel.dup2(stdout_fd, 1);
+		libkernel.dup2(stderr_fd, 2);
 	    } else {
 		throw new IOException("Invalid ELF file");
 	    }

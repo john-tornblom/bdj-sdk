@@ -43,6 +43,14 @@ public class libkernel {
 	return (int)lib.invoke("pipe", fds);
     }
 
+    public static int dup(int fd) {
+	return (int)lib.invoke("dup", fd);
+    }
+
+    public static int dup2(int oldfd, int newfd) {
+	return (int)lib.invoke("dup2", oldfd, newfd);
+    }
+    
     public static int kqueue() {
 	return (int)lib.invoke("kqueue");
     }
