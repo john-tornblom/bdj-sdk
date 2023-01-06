@@ -3,15 +3,21 @@
 "http://www.dvb.org/mhp/dtd/fontdirectory-1-0.dtd">
 <fontdirectory>
   <font>
-    <name>Arial</name>
+    <name>RobotoMono</name>
     <fontformat>OTF</fontformat>
     <filename>00000.otf</filename>
+    <style>PLAIN</style>
+  </font>
+  <font>
+    <name>Arial</name>
+    <fontformat>OTF</fontformat>
+    <filename>00001.otf</filename>
     <style>BOLD</style>
   </font>
   <font>
     <name>NewsGothicStd</name>
     <fontformat>OTF</fontformat>
-    <filename>00001.otf</filename>
+    <filename>00002.otf</filename>
     <style>BOLD</style>
   </font>
 </fontdirectory>
