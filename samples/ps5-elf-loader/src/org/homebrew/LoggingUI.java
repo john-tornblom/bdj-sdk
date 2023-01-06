@@ -9,7 +9,7 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 
 public class LoggingUI extends Container {
-    private final Font font = new Font(null, Font.PLAIN, 14);
+    private final Font font = new Font(Font.MONOSPACED, Font.PLAIN, 22);
     private final Color fontColor = new Color(240, 240, 240);
     private final Color bgColor = new Color(5, 5, 5);
     private final ArrayList rows = new ArrayList();
@@ -35,7 +35,7 @@ public class LoggingUI extends Container {
 	for(int i=0; i<rows.size(); i++) {
 	    String row = (String)rows.get(i);
 	    int len = g.getFontMetrics().stringWidth(row);
-	    g.drawString(row, 30, 40 + (i*15));
+	    g.drawString(row, 30, 40 + (i*25));
 	}
     }
 

