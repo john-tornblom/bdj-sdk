@@ -40,27 +40,22 @@ public class ElfLoadingServer {
 	}
     }
     
-    public static void spawn(int port) {
+    public static void spawn(int port) throws IOException {
+	final ServerSocket ss = new ServerSocket(port);
+	ss.setReuseAddress(true);
+	
         new Thread(new Runnable() {
 		public void run() {
 		    try {
-			ElfLoadingServer.run(port);
+			ElfLoadingServer.run(ss);
 		    } catch (Throwable t) {
 			LoggingUI.getInstance().log(t);
 		    }
 		}
 	    }).start();
-
-	try {
-	    Thread.sleep(3000);
-	} catch (Throwable t) {
-	}
     }
     
-    public static void run(int port) throws IOException {
-        ServerSocket ss = new ServerSocket(port);
-        ss.setReuseAddress(true);
-
+    public static void run(ServerSocket ss) throws IOException {
         while (true) {
             try {
                 serve(ss.accept());
