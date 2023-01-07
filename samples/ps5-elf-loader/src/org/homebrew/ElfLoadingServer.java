@@ -256,17 +256,15 @@ public class ElfLoadingServer {
 		// redirect stdout and stderr to socket
 		libkernel.dup2(sock_fd, 1);
 		libkernel.dup2(sock_fd, 2);
-		
+
+		// invoke function
 		args[0] = arg_addr;
 		args[1] = 0;
 		args[2] = 0;
 		args[3] = 0;
 		args[4] = 0;
 		args[5] = 0;
-
-		ps.println("entry_addr: 0x" + Long.toHexString(func));
-		int rc = (int)NativeInvocation.invoke(func, args);
-		ps.println("return_val: 0x" + Long.toHexString(rc));
+		NativeInvocation.invoke(func, args);
 
 		// resore stdout and stderr
 		libkernel.dup2(stdout_fd, 1);
