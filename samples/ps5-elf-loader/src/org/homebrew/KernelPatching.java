@@ -50,28 +50,5 @@ public class KernelPatching {
 	KernelMemory.putLong(ucred + 0x68, -1l);                 // cr_sceCaps[1]
 	KernelMemory.putByte(ucred + 0x83, (byte)0x80);          // cr_sceAttr[0]
     }
-
-    public static void something() throws IOException {
-	long dynlib = KernelMemory.getLong(KernelMemory.getProcAddress() + KernelOffset.PROC_DYNLIB);
-	long restrict_flags = KernelMemory.getLong(dynlib + KernelOffset.DYNLIB_RESTRICT_FLAGS);
-	long dynlib_libkernel_obj = KernelMemory.getLong(dynlib + KernelOffset.DYNLIB_LIBKERNEL_OBJ);
-	
-	// Remove dynlib restrict
-	//KernelMemory.putInt(restrict_flags, 0);
-
-	// Remove libkernel ref from dynlib
-	//KernelMemory.putLong(dynlib_libkernel_obj + 32, 1); //???
-	
-	//TODO: get refcount and print it, also the path?
-
-	LoggingUI.getInstance().log("something 3");
-	String path = KernelMemory.getString(dynlib_libkernel_obj + 8);
-	LoggingUI.getInstance().log("path1 : " + path);
-
-	path = KernelMemory.getString(dynlib_libkernel_obj + 16);
-	LoggingUI.getInstance().log("path2 : " + path);
-
-	
-    }
 }
 
