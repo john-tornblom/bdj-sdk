@@ -153,7 +153,7 @@ main(void) {
  * Entry-point for the ELF loader.
  **/
 int
-_start(payload_args_t *args, int sock_fd) {
+_start(payload_args_t *args) {
   int stdout_fd = -1;
   int stderr_fd = -1;
   int exit_code = 0;

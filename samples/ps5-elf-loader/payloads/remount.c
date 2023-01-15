@@ -117,11 +117,7 @@ main(void) {
  * Entry-point for the ELF loader.
  **/
 int
-_start(payload_args_t *args, int sock_fd) {
-  int stdout_fd = -1;
-  int stderr_fd = -1;
-  int exit_code = 0;
-
+_start(payload_args_t *args,) {
   sceKernelDlsym = args->sceKernelDlsym;
 
   DLSYM(0x2, realloc);
@@ -132,20 +128,6 @@ _start(payload_args_t *args, int sock_fd) {
   DLSYM(0x2001, dup);
   DLSYM(0x2001, dup2);
   DLSYM(0x2001, nmount);
-
-  // backup stdout and stderr
-  stdout_fd = dup(STDOUT_FILENO);
-  stderr_fd = dup(STDERR_FILENO);
-
-  // redirect stdout and stderr to socket
-  dup2(sock_fd, STDOUT_FILENO);
-  dup2(sock_fd, STDERR_FILENO);
-
-  exit_code = main();
-
-  // resore stdout and stderr
-  dup2(stdout_fd, STDOUT_FILENO);
-  dup2(stderr_fd, STDERR_FILENO);
-
-  return exit_code;
+  
+  return main();
 }

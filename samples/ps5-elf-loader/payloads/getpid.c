@@ -14,7 +14,7 @@ int (*getpid)();
 /**
  * Entry-point for the ELF loader.
  **/
-int _start(payload_args_t *args, int fd) {
+int _start(payload_args_t *args) {
   args->sceKernelDlsym(0x2001, "getpid", &getpid);
   return getpid();
 }
