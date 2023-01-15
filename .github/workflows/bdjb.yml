@@ -37,6 +37,18 @@ jobs:
         make -C samples/ps5-jar-loader
         make -C samples/ps5-elf-loader
         make -C samples/ps5-elf-loader/payloads
+        make -C samples/ps5-payload-loader
+        make -C samples/ps5-payload-loader/payloads/elf
+        make -C samples/ps5-payload-loader/payloads/jar
+
+    - name: Upload ps5-payload-loader artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: ps5-payload-loader
+        path: |
+          samples/ps5-payload-loader/*.iso
+          samples/ps5-payload-loader/payloads/elf/*.elf
+          samples/ps5-payload-loader/payloads/jar/*.jar
 
     - name: Upload ps5-elf-loader artifact
       uses: actions/upload-artifact@v3
