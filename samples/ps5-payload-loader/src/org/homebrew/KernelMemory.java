@@ -29,7 +29,7 @@ public class KernelMemory {
     private static final int TCLASS_TAINT = 0x42;
     private static final int TCLASS_SPRAY = 0x41;
 
-    private static final int NUM_SPRAY = 0x169;
+    private static final int NUM_SPRAY = 0x69;
     private static final int NUM_SPRAY_RACE = NUM_SPRAY-1;
     private static final int NUM_KQUEUES = 0x96;
 
