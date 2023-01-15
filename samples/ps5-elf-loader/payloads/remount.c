@@ -117,7 +117,7 @@ main(void) {
  * Entry-point for the ELF loader.
  **/
 int
-_start(payload_args_t *args,) {
+_start(payload_args_t *args) {
   sceKernelDlsym = args->sceKernelDlsym;
 
   DLSYM(0x2, realloc);
