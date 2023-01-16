@@ -14,6 +14,7 @@ import org.havi.ui.event.HRcEvent;
 public class MyXlet extends Thread implements Xlet, UserEventListener {
     private static final int ELF_PORT = 9020;
     private static final int JAR_PORT = 9025;
+    private static final int LUA_PORT = 9938;
     
     private HScene scene;
     private LoggingUI gui;
@@ -75,6 +76,9 @@ public class MyXlet extends Thread implements Xlet, UserEventListener {
 
  	    JarLoadingServer.spawn(JAR_PORT);
 	    LoggingUI.getInstance().log("[+] JAR loader running on port " + JAR_PORT);
+
+	    LuaLoadingServer.spawn(LUA_PORT);
+	    LoggingUI.getInstance().log("[+] Lua loader running on port " + LUA_PORT);
 	    
 	    KernelPatching.jailbreak();
 	    LoggingUI.getInstance().log("[+] Escaped FreeBSD jail");

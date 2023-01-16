@@ -38,6 +38,7 @@ export JAVA11_HOME
 CLASSPATH := $(BDJSDK_HOME)/target/lib/enhanced-stubs.zip:$(BDJSDK_HOME)/target/lib/sony-stubs.jar
 SOURCES   := $(wildcard src/org/homebrew/*.java)
 JFLAGS    := -Xlint:-options
+LUAJ_URL  := https://github.com/luaj/luaj/releases/download/v3.0.2/luaj-jse-3.0.2.jar
 
 #
 # Disc files
@@ -57,8 +58,12 @@ all: $(DISC_LABEL).iso
 discdir:
 	mkdir -p $(DISC_DIRS)
 
-discdir/BDMV/JAR/00000.jar: discdir $(SOURCES)
-	$(JAVAC) $(JFLAGS) -cp $(CLASSPATH) $(SOURCES)
+luaj.jar:
+	wget -q -O $@ $(LUAJ_URL)
+
+discdir/BDMV/JAR/00000.jar: discdir $(SOURCES) luaj.jar
+	$(JAVAC) $(JFLAGS) -cp $(CLASSPATH):luaj.jar $(SOURCES)
+	unzip -o -d src luaj.jar -x META-INF META-INF/MANIFEST.MF
 	$(JAR) cf $@ -C src/ .
 	$(BDSIGNER) -keystore $(BDJSDK_HOME)/resources/sig.ks $@
 
