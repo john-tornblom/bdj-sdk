@@ -49,6 +49,7 @@ jobs:
           samples/ps5-payload-loader/*.iso
           samples/ps5-payload-loader/payloads/elf/*.elf
           samples/ps5-payload-loader/payloads/jar/*.jar
+          samples/ps5-payload-loader/payloads/lua/*.lua
 
     - name: Upload ps5-elf-loader artifact
       uses: actions/upload-artifact@v3
