@@ -115,7 +115,7 @@ public class ElfLoadingServer {
 
 	final int SIZE_ELF_PROG_HEAD = 0x38;
 	final int SIZE_ELF_HEAD      = 0x40;
-	
+
 	final int ELF_PT_NULL = 0x00;
 	final int ELF_PT_LOAD = 0x01;
 	
@@ -130,8 +130,6 @@ public class ElfLoadingServer {
 	final int MAP_ANONYMOUS = 0x1000;
 	
 	final long elf_size = SIZE_ELF_HEAD + (SIZE_ELF_PROG_HEAD * 0x10) + 0x200000;
-	final long mapping_addr = 0x926100000l;
-	final long shadow_addr = 0x920100000l;
 	
 	long elf_addr = 0;
 	long ret_addr = 0;
@@ -200,19 +198,19 @@ public class ElfLoadingServer {
 			}
 			
 			// Map exec segment
-			if((text_rx_addr = libkernel.mmap(mapping_addr + prog_vaddr,
+			if((text_rx_addr = libkernel.mmap(0,
 							  aligned_memsz,
 							  PROT_READ | PROT_EXEC,
-							  MAP_FIXED | MAP_SHARED,
+							  MAP_SHARED,
 							  text_rx_fd, 0)) == -1) {
 			    throw new Exception(libcInternal.strerror());
 			}
 
 			// Map write segment
-			if((text_rw_addr = libkernel.mmap(shadow_addr,
+			if((text_rw_addr = libkernel.mmap(0,
 							  aligned_memsz,
 							  PROT_READ | PROT_WRITE,
-							  MAP_FIXED | MAP_SHARED,
+							  MAP_SHARED,
 							  text_rw_fd, 0)) == -1) {
 			    throw new Exception(libcInternal.strerror());
 			}
@@ -226,10 +224,10 @@ public class ElfLoadingServer {
 			data_size = aligned_memsz;
 
 			// Map write segment
-			if((data_rw_addr = libkernel.mmap(mapping_addr + prog_vaddr,
+			if((data_rw_addr = libkernel.mmap(0,
 							  aligned_memsz,
 							  PROT_READ | PROT_WRITE,
-							  MAP_ANONYMOUS | MAP_FIXED | MAP_PRIVATE,
+							  MAP_ANONYMOUS | MAP_PRIVATE,
 							  -1, 0)) == -1) {
 			    throw new Exception(libcInternal.strerror());
 			}
@@ -245,7 +243,7 @@ public class ElfLoadingServer {
 	    
 	    if(text_rx_addr != 0) {
 		long args[] = new long[6];
-		long func = mapping_addr + elf_entry_point;
+		long func = text_rx_addr + elf_entry_point;
 		FileOutputStream fos = (FileOutputStream)os;
 		int sock_fd = SharedSecrets.getJavaIOFileDescriptorAccess().get(fos.getFD());
 
