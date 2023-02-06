@@ -118,16 +118,16 @@ public class libkernel {
 	}
     }
 
-    public static long mmap(long addr, int length, int prot, int flags,
+    public static long mmap(long addr, long length, int prot, int flags,
 			   int fd, int offset) {
 	return lib.invoke("mmap", addr, length, prot, flags, fd, offset);
     }
 
-    public static int munmap(long addr, int length) {
+    public static int munmap(long addr, long length) {
 	return (int)lib.invoke("munmap", addr, length);
     }
     
-    public static int jitCreateSharedMemory(int flags, int size, int prot, long dest) {
+    public static int jitCreateSharedMemory(int flags, long size, int prot, long dest) {
 	return (int)lib.invoke("sceKernelJitCreateSharedMemory", flags, size, prot, dest);
     }
     

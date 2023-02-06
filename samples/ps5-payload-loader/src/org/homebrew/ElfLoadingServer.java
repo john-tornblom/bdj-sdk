@@ -111,9 +111,12 @@ public class ElfLoadingServer {
 
 	final int OFF_ELF_HEAD_ENTRY = 0x18;
 	final int OFF_ELF_HEAD_PHOFF = 0x20;
+	final int OFF_ELF_HEAD_SHOFF = 0x28;
 	final int OFF_ELF_HEAD_PHNUM = 0x38;
+	final int OFF_ELF_HEAD_SHNUM = 0x3c;
 
 	final int SIZE_ELF_PROG_HEAD = 0x38;
+	final int SIZE_ELF_SYMB_HEAD = 0x40;
 	final int SIZE_ELF_HEAD      = 0x40;
 
 	final int ELF_PT_NULL = 0x00;
@@ -138,8 +141,8 @@ public class ElfLoadingServer {
 	long text_rw_addr = 0;
 	long text_rx_addr = 0;
 	
-	int text_size = 0;
-        int data_size = 0;
+	long text_size = 0;
+	long data_size = 0;
 	
 	int text_rw_fd = 0;
 	int text_rx_fd = 0;
@@ -158,20 +161,22 @@ public class ElfLoadingServer {
 		NativeMemory.putByte(elf_addr + i, elf_bytes[i]);
 	    }
 
-	    int elf_prog_heads_off = NativeMemory.getInt(elf_addr + OFF_ELF_HEAD_PHOFF);
-	    int elf_prog_heads_num = NativeMemory.getInt(elf_addr + OFF_ELF_HEAD_PHNUM) & 0xFFFF;
-	    int elf_entry_point    = NativeMemory.getInt(elf_addr + OFF_ELF_HEAD_ENTRY);
+	    long elf_entry_point     = NativeMemory.getLong(elf_addr + OFF_ELF_HEAD_ENTRY);
+	    long elf_prog_heads_off  = NativeMemory.getLong(elf_addr + OFF_ELF_HEAD_PHOFF);
+	    long elf_symbols_off     = NativeMemory.getLong(elf_addr + OFF_ELF_HEAD_SHOFF);
+	    short elf_prog_heads_num = NativeMemory.getShort(elf_addr + OFF_ELF_HEAD_PHNUM);
+	    short elf_symbols_num    = NativeMemory.getShort(elf_addr + OFF_ELF_HEAD_SHNUM);
 
 	    for(int i=0; i<elf_prog_heads_num; i++) {
-		int prog_head_off = elf_prog_heads_off + (i * SIZE_ELF_PROG_HEAD);
+		long prog_head_off = elf_prog_heads_off + (i * SIZE_ELF_PROG_HEAD);
 
 		int prog_type  = NativeMemory.getInt(elf_addr + prog_head_off + OFF_PROG_HEAD_TYPE);
 		int prog_flags = NativeMemory.getInt(elf_addr + prog_head_off + OFF_PROG_HEAD_FLAGS);
-		int prog_off   = NativeMemory.getInt(elf_addr + prog_head_off + OFF_PROG_HEAD_OFF);
-		int prog_vaddr = NativeMemory.getInt(elf_addr + prog_head_off + OFF_PROG_HEAD_VADDR);
-		int prog_memsz = NativeMemory.getInt(elf_addr + prog_head_off + OFF_PROG_HEAD_MEMSZ);
+		long prog_off   = NativeMemory.getLong(elf_addr + prog_head_off + OFF_PROG_HEAD_OFF);
+		long prog_vaddr = NativeMemory.getLong(elf_addr + prog_head_off + OFF_PROG_HEAD_VADDR);
+		long prog_memsz = NativeMemory.getLong(elf_addr + prog_head_off + OFF_PROG_HEAD_MEMSZ);
 		
-		int aligned_memsz = (prog_memsz + 0x3FFF) & 0xFFFFC000;
+		long aligned_memsz = (prog_memsz + 0x3FFF) & 0xFFFFFFFFFFFFC000l;
 
 		if(prog_type == ELF_PT_LOAD) {
 		    if((prog_flags & 1) == 1) {
