@@ -12,28 +12,35 @@ typedef struct payload_args {
 
 
 /**
+ * Relocatable data.
+ **/
+static char* strings[] = {
+  "ABCD",
+  "EFGH",
+  "IJKL",
+  "MNOP"
+};
+
+
+/**
  * libc functions.
  **/
 int (*printf)(const char *, ...);
 
 
 /**
- * libkernel functions.
- **/
-int (*getpid)();
-
-
-/**
  * Entry-point for the ELF loader.
  **/
 int _start(payload_args_t *args) {
-  int pid;
+  if(args->sceKernelDlsym(0x2, "printf", &printf)) {
+    return -1;
+  }
   
-  args->sceKernelDlsym(0x2001, "getpid", &getpid);
-  args->sceKernelDlsym(0x2, "printf", &printf);
-  
-  pid = getpid();
-  printf("%d\n", pid);
-  
-  return pid;
+  if(strings[2][2] == 'K') {
+    printf("Pass\n");
+  } else {
+    printf("Fail\n");
+  }
+
+  return 0;
 }

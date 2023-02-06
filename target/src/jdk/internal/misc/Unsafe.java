@@ -10,7 +10,6 @@ public final class Unsafe {
 	return theUnsafe;
     }
 
-
     public long allocateMemory(long size) {
 	return 0;
     }
@@ -19,6 +18,9 @@ public final class Unsafe {
     }
 
     public void setMemory(long addr, long length, byte value) {
+    }
+
+    public void copyMemory(long src_addr, long dst_addr, long length) {
     }
 
     public byte getByte(long addr) {

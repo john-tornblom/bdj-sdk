@@ -20,6 +20,10 @@ public class NativeMemory {
 	return theUnsafe.allocateMemory(size);
     }
 
+    public static void copyMemory(long src_addr, long dst_addr, long length) {
+	theUnsafe.copyMemory(src_addr, dst_addr, length);
+    }
+
     public static void freeMemory(long addr) {
 	theUnsafe.freeMemory(addr);
     }
