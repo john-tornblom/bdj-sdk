@@ -2,7 +2,7 @@ PS5_HOST ?= ps5
 PS5_PORT ?= 9020
 
 CC     ?= cc
-CFLAGS := -ffreestanding -fno-builtin -nostdlib -static
+CFLAGS := -ffreestanding -fno-builtin -nostdlib -fPIC -fpie
 
 all: getpid.elf mntinfo.elf remount.elf reloc.elf
 
