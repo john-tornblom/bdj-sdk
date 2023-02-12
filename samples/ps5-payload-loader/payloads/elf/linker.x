@@ -17,8 +17,7 @@ PHDRS
 
 SECTIONS
 {
-	__payload_base = .;
-
+	. = 0x920100000;
 	.text :
 	{
 		KEEP (*(.init))
@@ -38,6 +37,7 @@ SECTIONS
 
 	. = ALIGN(0x4000);
 
+	. = 0x926100000;
 	.data :
 	{
 		*(.data .data.*)
