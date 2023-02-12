@@ -1,29 +1,22 @@
 PS5_HOST ?= ps5
 PS5_PORT ?= 9020
 
-CC     ?= cc
-CFLAGS := -ffreestanding -fno-builtin -nostdlib -static
+CC      ?= cc
+LD      ?= ld
+CFLAGS  := -ffreestanding -fno-builtin -nostdlib -static
+LDFLAGS := -static -T linker.x
 
 all: getpid.elf mntinfo.elf remount.elf
 
-getpid.elf: getpid.c
-	$(CC) $(CFLAGS) -o $@ $< -Xlinker -T linker.x
+%.o: %.c
+	$(CC) -c $(CFLAGS) -o $@ $^
 
-mntinfo.elf: mntinfo.c
-	$(CC) $(CFLAGS) -o $@ $< -Xlinker -T linker.x
-
-remount.elf: remount.c
-	$(CC) $(CFLAGS) -o $@ $< -Xlinker -T linker.x
+%.elf: %.o
+	$(LD) $(LDFLAGS) -o $@ $<
 
 clean:
-	rm -f getpid.elf mntinfo.elf remount.elf
+	rm -f *.o *.elf
 
-getpid_test: getpid.elf
-	nc -q0 $(PS5_HOST) $(PS5_PORT) < $^
-
-mntinfo_test: mntinfo.elf
-	nc -q0 $(PS5_HOST) $(PS5_PORT) < $^
-
-remount_test: remount.elf
+%_test: %.elf
 	nc -q0 $(PS5_HOST) $(PS5_PORT) < $^
 
