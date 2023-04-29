@@ -11,15 +11,15 @@ import java.net.Socket;
 import jdk.internal.access.SharedSecrets;
 
 public class ElfLoadingServer {
+    private static final int OFF_EHDR_ENTRY = 0x18;
+    private static final int OFF_EHDR_PHOFF = 0x20;
+    private static final int OFF_EHDR_PHNUM = 0x38;
+
     private static final int OFF_PHDR_TYPE   = 0x00;
     private static final int OFF_PHDR_FLAGS  = 0x04;
     private static final int OFF_PHDR_OFF    = 0x08;
     private static final int OFF_PHDR_VADDR  = 0x10;
     private static final int OFF_PHDR_MEMSZ  = 0x28;
-
-    private static final int OFF_EHDR_ENTRY = 0x18;
-    private static final int OFF_EHDR_PHOFF = 0x20;
-    private static final int OFF_EHDR_PHNUM = 0x38;
 
     private static final int SIZE_PHDR = 0x38;
     private static final int SIZE_EHDR = 0x40;
@@ -166,68 +166,71 @@ public class ElfLoadingServer {
 		long p_memsz = NativeMemory.getLong(phdr_addr + OFF_PHDR_MEMSZ);
 		int aligned_memsz = (int)(p_memsz + 0x3FFF) & 0xFFFFC000;
 
-		if(p_type == PT_LOAD) {
-		    if((p_flags & 1) == 1) {
-			int alias_fd = -1;
-			long alias_addr = -1;
-			text_size = aligned_memsz;
+		if(p_type != PT_LOAD) {
+		    continue;
+		}
 
-			// Create shm with executable permissions
-			if(libkernel.jitCreateSharedMemory(0, aligned_memsz,
-							   PROT_READ | PROT_WRITE | PROT_EXEC,
-							   ret_addr) != 0) {
-			    throw new Exception(libcInternal.strerror());
-			}
-			if((shm_fd = NativeMemory.getInt(ret_addr)) == 0) {
-			    throw new Exception(libcInternal.strerror());
-			}
+		if((p_flags & 1) == 1) {
+		    int alias_fd = -1;
+		    long alias_addr = -1;
+		    text_size = aligned_memsz;
 
-			// Map shm into an executable address space
-			if((text_addr = libkernel.mmap(p_vaddr, aligned_memsz,
-						       PROT_READ | PROT_EXEC,
-						       MAP_FIXED | MAP_SHARED,
-						       shm_fd, 0)) == -1) {
-			    throw new Exception(libcInternal.strerror());
-			}
-
-			// Create an shm alias fd with writable permissions
-			if(libkernel.jitCreateAliasOfSharedMemory(shm_fd, PROT_READ | PROT_WRITE,
-								  ret_addr) != 0) {
-			    throw new Exception(libcInternal.strerror());
-			}
-			if((alias_fd = NativeMemory.getInt(ret_addr)) == 0) {
-			    throw new Exception(libcInternal.strerror());
-			}
-
-			// Map shm alias into a writable address space
-			if((alias_addr = libkernel.mmap(0, aligned_memsz,
-							PROT_READ | PROT_WRITE, MAP_SHARED,
-							alias_fd, 0)) == -1) {
-			    libkernel.close(alias_fd);
-			    throw new Exception(libcInternal.strerror());
-			}
-
-			// Copy in data
-			NativeMemory.copyMemory(elf_addr + p_off, alias_addr, p_memsz);
-
-			// Remove alias shm
-			libkernel.munmap(alias_addr, aligned_memsz);
-			libkernel.close(alias_fd);
-		    } else {
-			data_size = aligned_memsz;
-
-			// Map write segment
-			if((data_addr = libkernel.mmap(p_vaddr,
-						       aligned_memsz,
-						       PROT_READ | PROT_WRITE,
-						       MAP_ANONYMOUS | MAP_FIXED | MAP_PRIVATE,
-						       -1, 0)) == -1) {
-			    throw new Exception(libcInternal.strerror());
-			}
-
-			// Copy in segment data
-			NativeMemory.copyMemory(elf_addr + p_off, data_addr, p_memsz);
+		    // Create shm with executable permissions
+		    if(libkernel.jitCreateSharedMemory(0, aligned_memsz,
+						       PROT_READ | PROT_WRITE | PROT_EXEC,
+						       ret_addr) != 0) {
+			throw new Exception(libcInternal.strerror());
 		    }
+		    if((shm_fd = NativeMemory.getInt(ret_addr)) == 0) {
+			throw new Exception(libcInternal.strerror());
+		    }
+
+		    // Map shm into an executable address space
+		    if((text_addr = libkernel.mmap(p_vaddr, aligned_memsz,
+						   PROT_READ | PROT_EXEC,
+						   MAP_FIXED | MAP_SHARED,
+						   shm_fd, 0)) == -1) {
+			throw new Exception(libcInternal.strerror());
+		    }
+
+		    // Create an shm alias fd with writable permissions
+		    if(libkernel.jitCreateAliasOfSharedMemory(shm_fd,
+							      PROT_READ | PROT_WRITE,
+							      ret_addr) != 0) {
+			throw new Exception(libcInternal.strerror());
+		    }
+		    if((alias_fd = NativeMemory.getInt(ret_addr)) == 0) {
+			throw new Exception(libcInternal.strerror());
+		    }
+
+		    // Map shm alias into a writable address space
+		    if((alias_addr = libkernel.mmap(0, aligned_memsz,
+						    PROT_READ | PROT_WRITE, MAP_SHARED,
+						    alias_fd, 0)) == -1) {
+			libkernel.close(alias_fd);
+			throw new Exception(libcInternal.strerror());
+		    }
+
+		    // Copy in data
+		    NativeMemory.copyMemory(elf_addr + p_off, alias_addr, p_memsz);
+
+		    // Remove alias shm
+		    libkernel.munmap(alias_addr, aligned_memsz);
+		    libkernel.close(alias_fd);
+		} else {
+		    data_size = aligned_memsz;
+
+		    // Map write segment
+		    if((data_addr = libkernel.mmap(p_vaddr,
+						   aligned_memsz,
+						   PROT_READ | PROT_WRITE,
+						   MAP_ANONYMOUS | MAP_FIXED | MAP_PRIVATE,
+						   -1, 0)) == -1) {
+			throw new Exception(libcInternal.strerror());
+		    }
+
+		    // Copy in segment data
+		    NativeMemory.copyMemory(elf_addr + p_off, data_addr, p_memsz);
 		}
 	    }
 	    
