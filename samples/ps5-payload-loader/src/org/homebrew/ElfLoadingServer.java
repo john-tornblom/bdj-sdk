@@ -11,8 +11,32 @@ import java.net.Socket;
 import jdk.internal.access.SharedSecrets;
 
 public class ElfLoadingServer {
-    static final long arg_addr;
-    
+    private static final int OFF_PHDR_TYPE   = 0x00;
+    private static final int OFF_PHDR_FLAGS  = 0x04;
+    private static final int OFF_PHDR_OFF    = 0x08;
+    private static final int OFF_PHDR_VADDR  = 0x10;
+    private static final int OFF_PHDR_MEMSZ  = 0x28;
+
+    private static final int OFF_EHDR_ENTRY = 0x18;
+    private static final int OFF_EHDR_PHOFF = 0x20;
+    private static final int OFF_EHDR_PHNUM = 0x38;
+
+    private static final int SIZE_PHDR = 0x38;
+    private static final int SIZE_EHDR = 0x40;
+
+    private static final int PT_LOAD = 0x01;
+
+    private static final int PROT_READ  = 0x1;
+    private static final int PROT_WRITE = 0x2;
+    private static final int PROT_EXEC  = 0x4;
+
+    private static final int MAP_SHARED    = 0x1;
+    private static final int MAP_PRIVATE   = 0x2;
+    private static final int MAP_FIXED     = 0x10;
+    private static final int MAP_ANONYMOUS = 0x1000;
+
+    private static final long arg_addr;
+
     static {
 	long payload_output_addr = NativeMemory.allocateMemory(8);
 	long pipe_rw_fds = NativeMemory.allocateMemory(8);
@@ -88,13 +112,14 @@ public class ElfLoadingServer {
 
     private static byte[] readBytes(Socket s) throws IOException {
 	ByteArrayOutputStream buf = new ByteArrayOutputStream();
+	byte[] chunk = new byte[0x4000];
 	
         while (true) {
-            int b = s.getInputStream().read();
-            if (b < 0) {
+            int length = s.getInputStream().read(chunk, 0, chunk.length);
+            if (length < 0) {
                 break;
             } else {
-                buf.write(b);
+                buf.write(chunk, 0, length);
             }
         }
 	
@@ -102,49 +127,16 @@ public class ElfLoadingServer {
     }
     
     private static void runElf(byte[] elf_bytes, OutputStream os) throws Exception {
-	final int OFF_PROG_HEAD_TYPE   = 0x00;
-	final int OFF_PROG_HEAD_FLAGS  = 0x04;
-	final int OFF_PROG_HEAD_OFF    = 0x08;
-	final int OFF_PROG_HEAD_VADDR  = 0x10;
-	final int OFF_PROG_HEAD_FILESZ = 0x20;
-	final int OFF_PROG_HEAD_MEMSZ  = 0x28;
-
-	final int OFF_ELF_HEAD_ENTRY = 0x18;
-	final int OFF_ELF_HEAD_PHOFF = 0x20;
-	final int OFF_ELF_HEAD_PHNUM = 0x38;
-
-	final int SIZE_ELF_PROG_HEAD = 0x38;
-	final int SIZE_ELF_HEAD      = 0x40;
-	
-	final int ELF_PT_NULL = 0x00;
-	final int ELF_PT_LOAD = 0x01;
-	
-	final int PROT_NONE  = 0x0;
-	final int PROT_READ  = 0x1;
-	final int PROT_WRITE = 0x2;
-	final int PROT_EXEC  = 0x4;
-	
-	final int MAP_SHARED    = 0x1;
-	final int MAP_PRIVATE   = 0x2;
-	final int MAP_FIXED     = 0x10;
-	final int MAP_ANONYMOUS = 0x1000;
-	
-	final long elf_size = SIZE_ELF_HEAD + (SIZE_ELF_PROG_HEAD * 0x10) + 0x200000;
-	final long mapping_addr = 0x926100000l;
-	final long shadow_addr = 0x920100000l;
-	
 	long elf_addr = 0;
 	long ret_addr = 0;
 	
-	long data_rw_addr = 0;
-	long text_rw_addr = 0;
-	long text_rx_addr = 0;
-	
+	long text_addr = 0;
+	long data_addr = 0;
+
 	int text_size = 0;
         int data_size = 0;
 	
-	int text_rw_fd = 0;
-	int text_rx_fd = 0;
+	int shm_fd = 0;
 
 	PrintStream ps = new PrintStream(os);
 	
@@ -155,97 +147,92 @@ public class ElfLoadingServer {
 	
 	try {
 	    ret_addr = NativeMemory.allocateMemory(8);
-	    elf_addr = NativeMemory.allocateMemory(elf_size);
+	    elf_addr = NativeMemory.allocateMemory(elf_bytes.length);
 	    for(int i=0; i<elf_bytes.length; i++) {
 		NativeMemory.putByte(elf_addr + i, elf_bytes[i]);
 	    }
 
-	    int elf_prog_heads_off = NativeMemory.getInt(elf_addr + OFF_ELF_HEAD_PHOFF);
-	    int elf_prog_heads_num = NativeMemory.getInt(elf_addr + OFF_ELF_HEAD_PHNUM) & 0xFFFF;
-	    int elf_entry_point    = NativeMemory.getInt(elf_addr + OFF_ELF_HEAD_ENTRY);
+	    long e_entry  = NativeMemory.getLong(elf_addr + OFF_EHDR_ENTRY);
+	    long e_phoff  = NativeMemory.getLong(elf_addr + OFF_EHDR_PHOFF);
+	    short e_phnum = NativeMemory.getShort(elf_addr + OFF_EHDR_PHNUM);
 
-	    for(int i=0; i<elf_prog_heads_num; i++) {
-		int prog_head_off = elf_prog_heads_off + (i * SIZE_ELF_PROG_HEAD);
+	    for(int i=0; i<e_phnum; i++) {
+		long phdr_addr = elf_addr + e_phoff + (i * SIZE_PHDR);
 
-		int prog_type  = NativeMemory.getInt(elf_addr + prog_head_off + OFF_PROG_HEAD_TYPE);
-		int prog_flags = NativeMemory.getInt(elf_addr + prog_head_off + OFF_PROG_HEAD_FLAGS);
-		int prog_off   = NativeMemory.getInt(elf_addr + prog_head_off + OFF_PROG_HEAD_OFF);
-		int prog_vaddr = NativeMemory.getInt(elf_addr + prog_head_off + OFF_PROG_HEAD_VADDR);
-		int prog_memsz = NativeMemory.getInt(elf_addr + prog_head_off + OFF_PROG_HEAD_MEMSZ);
-		
-		int aligned_memsz = (prog_memsz + 0x3FFF) & 0xFFFFC000;
+		int p_type  = NativeMemory.getInt(phdr_addr + OFF_PHDR_TYPE);
+		int p_flags = NativeMemory.getInt(phdr_addr + OFF_PHDR_FLAGS);
+		long p_off   = NativeMemory.getLong(phdr_addr + OFF_PHDR_OFF);
+		long p_vaddr = NativeMemory.getLong(phdr_addr + OFF_PHDR_VADDR);
+		long p_memsz = NativeMemory.getLong(phdr_addr + OFF_PHDR_MEMSZ);
+		int aligned_memsz = (int)(p_memsz + 0x3FFF) & 0xFFFFC000;
 
-		if(prog_type == ELF_PT_LOAD) {
-		    if((prog_flags & 1) == 1) {
+		if(p_type == PT_LOAD) {
+		    if((p_flags & 1) == 1) {
+			int alias_fd = -1;
+			long alias_addr = -1;
 			text_size = aligned_memsz;
 
-			// Get exec fd
+			// Create shm with executable permissions
 			if(libkernel.jitCreateSharedMemory(0, aligned_memsz,
 							   PROT_READ | PROT_WRITE | PROT_EXEC,
 							   ret_addr) != 0) {
 			    throw new Exception(libcInternal.strerror());
 			}
-			if((text_rx_fd = NativeMemory.getInt(ret_addr)) == 0) {
+			if((shm_fd = NativeMemory.getInt(ret_addr)) == 0) {
 			    throw new Exception(libcInternal.strerror());
 			}
 
-			// Get write fd
-			if(libkernel.jitCreateAliasOfSharedMemory(text_rx_fd,
-								  PROT_READ | PROT_WRITE,
+			// Map shm into an executable address space
+			if((text_addr = libkernel.mmap(p_vaddr, aligned_memsz,
+						       PROT_READ | PROT_EXEC,
+						       MAP_FIXED | MAP_SHARED,
+						       shm_fd, 0)) == -1) {
+			    throw new Exception(libcInternal.strerror());
+			}
+
+			// Create an shm alias fd with writable permissions
+			if(libkernel.jitCreateAliasOfSharedMemory(shm_fd, PROT_READ | PROT_WRITE,
 								  ret_addr) != 0) {
 			    throw new Exception(libcInternal.strerror());
 			}
-			if((text_rw_fd = NativeMemory.getInt(ret_addr)) == 0) {
-			    throw new Exception(libcInternal.strerror());
-			}
-			
-			// Map exec segment
-			if((text_rx_addr = libkernel.mmap(mapping_addr + prog_vaddr,
-							  aligned_memsz,
-							  PROT_READ | PROT_EXEC,
-							  MAP_FIXED | MAP_SHARED,
-							  text_rx_fd, 0)) == -1) {
+			if((alias_fd = NativeMemory.getInt(ret_addr)) == 0) {
 			    throw new Exception(libcInternal.strerror());
 			}
 
-			// Map write segment
-			if((text_rw_addr = libkernel.mmap(shadow_addr,
-							  aligned_memsz,
-							  PROT_READ | PROT_WRITE,
-							  MAP_FIXED | MAP_SHARED,
-							  text_rw_fd, 0)) == -1) {
+			// Map shm alias into a writable address space
+			if((alias_addr = libkernel.mmap(0, aligned_memsz,
+							PROT_READ | PROT_WRITE, MAP_SHARED,
+							alias_fd, 0)) == -1) {
+			    libkernel.close(alias_fd);
 			    throw new Exception(libcInternal.strerror());
 			}
 
-			// Copy in segment data
-			for(int j=0; j<prog_memsz; j+=8) {
-			    long v = NativeMemory.getLong(elf_addr + prog_off + j);
-			    NativeMemory.putLong(text_rw_addr + j, v);
-			}
+			// Copy in data
+			NativeMemory.copyMemory(elf_addr + p_off, alias_addr, p_memsz);
+
+			// Remove alias shm
+			libkernel.munmap(alias_addr, aligned_memsz);
+			libkernel.close(alias_fd);
 		    } else {
 			data_size = aligned_memsz;
 
 			// Map write segment
-			if((data_rw_addr = libkernel.mmap(mapping_addr + prog_vaddr,
-							  aligned_memsz,
-							  PROT_READ | PROT_WRITE,
-							  MAP_ANONYMOUS | MAP_FIXED | MAP_PRIVATE,
-							  -1, 0)) == -1) {
+			if((data_addr = libkernel.mmap(p_vaddr,
+						       aligned_memsz,
+						       PROT_READ | PROT_WRITE,
+						       MAP_ANONYMOUS | MAP_FIXED | MAP_PRIVATE,
+						       -1, 0)) == -1) {
 			    throw new Exception(libcInternal.strerror());
 			}
 
 			// Copy in segment data
-			for (int j=0; j<prog_memsz; j+=8) {
-			    long v = NativeMemory.getLong(elf_addr + prog_off + j);
-			    NativeMemory.putLong(data_rw_addr + j, v);
-			}
+			NativeMemory.copyMemory(elf_addr + p_off, data_addr, p_memsz);
 		    }
 		}
 	    }
 	    
-	    if(text_rx_addr != 0) {
+	    if(text_addr != 0) {
 		long args[] = new long[6];
-		long func = mapping_addr + elf_entry_point;
 		FileOutputStream fos = (FileOutputStream)os;
 		int sock_fd = SharedSecrets.getJavaIOFileDescriptorAccess().get(fos.getFD());
 
@@ -264,7 +251,7 @@ public class ElfLoadingServer {
 		args[3] = 0;
 		args[4] = 0;
 		args[5] = 0;
-		NativeInvocation.invoke(func, args);
+		NativeInvocation.invoke(e_entry, args);
 
 		// resore stdout and stderr
 		libkernel.dup2(stdout_fd, 1);
@@ -277,29 +264,17 @@ public class ElfLoadingServer {
 	    if(elf_addr != 0) {
 		NativeMemory.freeMemory(elf_addr);
 	    }
-
 	    if(ret_addr != 0) {
 		NativeMemory.freeMemory(ret_addr);
 	    }
-
-	    if(text_rx_fd != 0) {
-		libkernel.close(text_rx_fd);
+	    if(text_addr != 0) {
+		libkernel.munmap(text_addr, text_size);
 	    }
-	    
-	    if(text_rw_fd != 0) {
-		libkernel.close(text_rw_fd);
+	    if(data_addr != 0) {
+		libkernel.munmap(data_addr, data_size);
 	    }
-
-	    if(text_rw_addr != 0) {
-		libkernel.munmap(text_rw_addr, text_size);
-	    }
-
-	    if(text_rx_addr != 0) {
-		libkernel.munmap(text_rx_addr, text_size);
-	    }
-	    
-	    if(data_rw_addr != 0) {
-		libkernel.munmap(data_rw_addr, data_size);
+	    if(shm_fd != 0) {
+		libkernel.close(shm_fd);
 	    }
         }
     }
