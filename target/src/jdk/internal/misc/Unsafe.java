@@ -21,6 +21,9 @@ public final class Unsafe {
     public void setMemory(long addr, long length, byte value) {
     }
 
+    public void copyMemory(long src_addr, long dst_addr, long length) {
+    }
+
     public byte getByte(long addr) {
 	return 0;
     }
