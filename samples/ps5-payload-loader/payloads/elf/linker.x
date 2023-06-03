@@ -8,11 +8,9 @@ PHDRS {
 }
 
 SECTIONS {
-	. = 0x920100000;
 	.text : { *(.text .text.*) } : ph_text
 	.rodata : { *(.rodata .rodata.*) }
 	. = ALIGN(0x4000);
-	. = 0x926100000;
 	.data : { *(.data .data.*) } : ph_data
 	.bss : {
 	     __bss_start = .;
