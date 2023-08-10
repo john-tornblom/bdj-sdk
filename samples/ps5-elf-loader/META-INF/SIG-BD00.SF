@@ -1,0 +1,101 @@
+Signature-Version: 1.0
+SHA1-Digest-Manifest: pI90rfhBB4JiBcFxAiiQ5S9BWf8=
+Created-By: 1.8.0_362 (Private Build)
+BDJ-Signature-Version: 1.0
+
+Name: org/homebrew/KernelOffset.class
+SHA1-Digest: 4UxkGDMSw1cdZao6Fd4mxPxqKk4=
+
+Name: org/homebrew/bluray.MyXlet.perm
+SHA1-Digest: NEC4x8kZPn8El+MFEjbx4k9UQtA=
+
+Name: org/homebrew/KernelMemory$1.class
+SHA1-Digest: 4yBG9w1n5NyXLpcaIR0MeRv1PqY=
+
+Name: org/homebrew/Payload$1.class
+SHA1-Digest: Vh7BzEikHlAnhNg2o6yFKHkmZKI=
+
+Name: org/homebrew/NativeInvocation.java
+SHA1-Digest: f+qoH+6C2hTKmOODk321RNZHtEw=
+
+Name: org/homebrew/PrivilegeEscalation$JavaSecurityAccessProxy.class
+SHA1-Digest: kEneT56kYsGDMcLAXFl8U35g978=
+
+Name: org/homebrew/libkernel.class
+SHA1-Digest: m+7QBCRNi40hbS8jasBStpyaQrY=
+
+Name: org/homebrew/libkernel.java
+SHA1-Digest: Ulmj0v70+qHaEu6bEnZXExawERs=
+
+Name: org/homebrew/NativeInvocation.class
+SHA1-Digest: 3xORi+CNw49OCtzKf4YFrh7YhbE=
+
+Name: org/homebrew/ElfLoadingServer.class
+SHA1-Digest: yHZSbqmgX4oEG8pbJpwjVEEjOsk=
+
+Name: org/homebrew/ElfLoadingServer$1.class
+SHA1-Digest: YyBIH9n1EAysbbrTzYV8G0P1OGQ=
+
+Name: org/homebrew/NativeLibrary.java
+SHA1-Digest: rNLhadEhx/UIDQB3/jPtiLA7JAM=
+
+Name: org/homebrew/KernelPatching.java
+SHA1-Digest: hWyj7MubxWdRumVxZCZSEN3cKIM=
+
+Name: org/homebrew/NativeLibrary.class
+SHA1-Digest: ulCWQ77G3Cx5t1BP3QiRvN9dtn0=
+
+Name: org/homebrew/KernelOffset.java
+SHA1-Digest: UJVF2cpnpqbRyv1nuOrvPGySXsY=
+
+Name: org/homebrew/libcInternal.class
+SHA1-Digest: oE4sJ8u2hmz//FhqXFiik+H4Otc=
+
+Name: org/homebrew/libcInternal.java
+SHA1-Digest: XRGjVKze1RRjgoprNey+2/Ujij8=
+
+Name: org/homebrew/NativeMemory.class
+SHA1-Digest: rBkqhmjGQEiaaPdhiU61vSdE3HY=
+
+Name: org/homebrew/Payload.java
+SHA1-Digest: If+mi9BMoVOV/nR3bHhYktKY2Ec=
+
+Name: org/homebrew/KernelPatching.class
+SHA1-Digest: 655uJBOn10/4ygNPp6janXnpRa0=
+
+Name: org/homebrew/NativeMemory.java
+SHA1-Digest: f/BvXxfoA8RdUvY/bWEGKsHYUHA=
+
+Name: org/homebrew/MyXlet.class
+SHA1-Digest: BZJn0TpmL089ebKqUDiHPWjNHEM=
+
+Name: org/homebrew/KernelMemory.java
+SHA1-Digest: 4etPqBCfstJP6L11qjCMZctatL8=
+
+Name: org/homebrew/PrivilegeEscalation.java
+SHA1-Digest: Zip43vqFgXUfZdCQZp4cUGRaI3U=
+
+Name: org/homebrew/LoggingUI.java
+SHA1-Digest: u/1kAc649Bdd4Ot/weZnL1dqoGM=
+
+Name: org/homebrew/PrivilegeEscalation.class
+SHA1-Digest: Xy1jKij1CJ1ls/hbT9AstCf1NGs=
+
+Name: org/homebrew/ElfLoadingServer$2.class
+SHA1-Digest: SaCW5jZAnGCuyFuvyhgbnHPDKTw=
+
+Name: org/homebrew/ElfLoadingServer.java
+SHA1-Digest: nPdxWUugE6ncosZy3FWPSFzqYqw=
+
+Name: org/homebrew/LoggingUI.class
+SHA1-Digest: XnLHvF5ruSh9G+5Wz1lrFzCPAv8=
+
+Name: org/homebrew/KernelMemory.class
+SHA1-Digest: 9bYPWaD+G6+gYMuNvFOu0dXWbQM=
+
+Name: org/homebrew/Payload.class
+SHA1-Digest: 32/tQLgyvNACu819lhW76aTNe7g=
+
+Name: org/homebrew/MyXlet.java
+SHA1-Digest: ObNps68Nr3Qv15c/4kYbeNXiEww=
+
