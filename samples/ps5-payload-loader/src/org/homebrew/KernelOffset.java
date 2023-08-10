@@ -3,7 +3,7 @@ package org.homebrew;
 public class KernelOffset {
 
     public static final long TARGETID;
-    public static final long ALLPROC;	
+    public static final long ALLPROC;    
     public static final long PRISON0;
     public static final long ROOTVNODE;
     public static final long SECURITY_FLAGS;
