@@ -90,10 +90,6 @@ public class NativeMemory {
 	theUnsafe.setMemory(addr, length, value);
     }
 
-    public static void copyMemory(long src, long dst, long len) {
-        theUnsafe.copyMemory(src, dst, len);
-    }
-
     public static long addressOf(Object obj) {
 	Object[] array = new Object[]{obj};
 	int baseOffset = theUnsafe.arrayBaseOffset(Object[].class);

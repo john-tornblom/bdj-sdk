@@ -31,11 +31,11 @@ public class libkernel {
 	return (int)lib.invoke("close", fd);
     }
 
-    public static long read(int fd, long buf, long count) {
+    public static long read(int fd, long buf, int count) {
 	return lib.invoke("read", fd, buf, count);
     }
 
-    public static long write(int fd, long buf, long count) {
+    public static long write(int fd, long buf, int count) {
 	return lib.invoke("write", fd, buf, count);
     }
 
@@ -118,21 +118,17 @@ public class libkernel {
 	}
     }
 
-    public static long mmap(long addr, long length, int prot, int flags,
-			   int fd, long offset) {
+    public static long mmap(long addr, int length, int prot, int flags,
+			   int fd, int offset) {
 	return lib.invoke("mmap", addr, length, prot, flags, fd, offset);
     }
 
-    public static int mprotect(long addr, long length, int prot) {
-	return (int)lib.invoke("mprotect", addr, length, prot);
-    }
-
-    public static int munmap(long addr, long length) {
+    public static int munmap(long addr, int length) {
 	return (int)lib.invoke("munmap", addr, length);
     }
     
-    public static int jitCreateSharedMemory(long name, long size, int prot, long dest) {
-	return (int)lib.invoke("sceKernelJitCreateSharedMemory", name, size, prot, dest);
+    public static int jitCreateSharedMemory(int flags, int size, int prot, long dest) {
+	return (int)lib.invoke("sceKernelJitCreateSharedMemory", flags, size, prot, dest);
     }
     
     public static int jitCreateAliasOfSharedMemory(int fd, int prot, long dest) {
@@ -142,4 +138,5 @@ public class libkernel {
     public static long jitMapSharedMemory(int fd, int prot, long dest) {
 	return lib.invoke("sceKernelJitMapSharedMemory", fd, prot, dest);
     }
+    
 }
