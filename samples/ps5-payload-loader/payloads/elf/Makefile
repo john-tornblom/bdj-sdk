@@ -3,8 +3,8 @@ PS5_PORT ?= 9020
 
 CC      ?= cc
 LD      ?= ld
-CFLAGS  := -ffreestanding -fno-builtin -nostdlib -static
-LDFLAGS := -static -T linker.x
+CFLAGS  := -ffreestanding -fno-builtin -nostdlib -fPIC
+LDFLAGS := -pie -T linker.x
 
 all: getpid.elf mntinfo.elf remount.elf
 
