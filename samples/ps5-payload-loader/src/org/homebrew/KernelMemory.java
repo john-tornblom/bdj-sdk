@@ -616,7 +616,7 @@ public class KernelMemory {
     public static int getVictimSocket() {
 	return victim_sock;
     }
-    
+
     public static byte getByte(long addr) throws IOException {
 	if(kernel_base == 0) {
 	    throw new IOException("Invalid base address");
@@ -653,6 +653,20 @@ public class KernelMemory {
 	}
     }
 
+    public static byte[] getBytes(long addr, int length) throws IOException {
+	byte bytes[] = new byte[length];
+	for(int i=0; i<length; i++) {
+	    bytes[i] = getByte(addr + i);
+	}
+	return bytes;
+    }
+
+    public static void putBytes(long addr, byte[] bytes) throws IOException {
+	for(int i=0; i<bytes.length; i++) {
+	    putByte(addr+i, bytes[i]);
+	}
+    }
+
     public static void putString(long addr, String str) throws IOException {
 	for(int i=0; i<str.length(); i++) {
 	    putByte(addr+i, (byte)str.charAt(i));
@@ -660,10 +674,7 @@ public class KernelMemory {
     }
 
     public static String getString(long addr, int length) throws IOException {
-	byte bytes[] = new byte[length];
-	for(int i=0; i<length; i++) {
-	    bytes[i] = getByte(addr + i);
-	}
+	byte bytes[] = getBytes(addr, length);
 	return new String(bytes);
     }
 

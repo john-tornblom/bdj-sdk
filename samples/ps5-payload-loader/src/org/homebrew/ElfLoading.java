@@ -1,16 +1,13 @@
 package org.homebrew;
 
-import java.io.ByteArrayOutputStream;
 import java.io.FileDescriptor;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
-import java.net.ServerSocket;
-import java.net.Socket;
 import jdk.internal.access.SharedSecrets;
 
-public class ElfLoadingServer {
+public class ElfLoading {
     private static final int OFF_EHDR_TYPE  = 0x10;
     private static final int OFF_EHDR_ENTRY = 0x18;
     private static final int OFF_EHDR_PHOFF = 0x20;
@@ -89,68 +86,15 @@ public class ElfLoadingServer {
 	}
     }
 
-    public static void spawn(int port) throws IOException {
-	final ServerSocket ss = new ServerSocket(port);
-	ss.setReuseAddress(true);
-
-        new Thread(new Runnable() {
-		public void run() {
-		    try {
-			ElfLoadingServer.run(ss);
-		    } catch (Throwable t) {
-			LoggingUI.getInstance().log(t);
-		    }
-		}
-	    }).start();
+    public static void spawnServer(int port) throws Exception {
+	new LoadingServer(port) {
+	    public void runPayload(byte[] bytes, OutputStream os) throws Exception {
+		ElfLoading.runElf(bytes, os);
+	    }
+	}.spawn();
     }
 
-    public static void run(ServerSocket ss) throws IOException {
-        while (true) {
-            try {
-                serve(ss.accept());
-            } catch (Throwable t) {
-		LoggingUI.getInstance().log(t);
-            }
-        }
-    }
-
-    private static void serve(final Socket s) throws Exception {
-        final PrintStream err = new PrintStream(s.getOutputStream());
-        new Thread(new Runnable() {
-            public void run() {
-                try {
-                    byte[] bytes = readBytes(s);
-                    runElf(bytes, s.getOutputStream());
-                } catch (Throwable t) {
-                    t.printStackTrace(err);
-                }
-
-                try {
-                    s.close();
-                } catch (Throwable t) {
-		    LoggingUI.getInstance().log(t);
-                }
-            }
-        }).start();
-    }
-
-    private static byte[] readBytes(Socket s) throws IOException {
-	ByteArrayOutputStream buf = new ByteArrayOutputStream();
-	byte[] chunk = new byte[0x4000];
-
-        while (true) {
-            int length = s.getInputStream().read(chunk, 0, chunk.length);
-            if (length < 0) {
-                break;
-            } else {
-                buf.write(chunk, 0, length);
-            }
-        }
-
-        return buf.toByteArray();
-    }
-
-    private static void runElf(byte[] elf_bytes, OutputStream os) throws Exception {
+    public static void runElf(byte[] elf_bytes, OutputStream os) throws Exception {
 	long elf_addr = 0;
 	long ret_addr = 0;
 
@@ -352,16 +296,22 @@ public class ElfLoadingServer {
 
 	    if(base_addr != -1) {
 		long args[] = new long[6];
-		FileOutputStream fos = (FileOutputStream)os;
-		int sock_fd = SharedSecrets.getJavaIOFileDescriptorAccess().get(fos.getFD());
+		int sock_fd = -1;
+		int stdout_fd = -1;
+		int stderr_fd = -1;
 
-		// Backup stdout and stderr.
-		int stdout_fd = libkernel.dup(1);
-		int stderr_fd = libkernel.dup(2);
+		if(os != null) {
+		    FileOutputStream fos = (FileOutputStream)os;
+		    sock_fd = SharedSecrets.getJavaIOFileDescriptorAccess().get(fos.getFD());
 
-		// Redirect stdout and stderr to socket.
-		libkernel.dup2(sock_fd, 1);
-		libkernel.dup2(sock_fd, 2);
+		    // Backup stdout and stderr.
+		    stdout_fd = libkernel.dup(1);
+		    stderr_fd = libkernel.dup(2);
+
+		    // Redirect stdout and stderr to socket.
+		    libkernel.dup2(sock_fd, 1);
+		    libkernel.dup2(sock_fd, 2);
+		}
 
 		// Invoke entry point.
 		args[0] = arg_addr;
@@ -372,9 +322,11 @@ public class ElfLoadingServer {
 		args[5] = 0;
 		NativeInvocation.invoke(base_addr + e_entry, args);
 
-		// Resore stdout and stderr.
-		libkernel.dup2(stdout_fd, 1);
-		libkernel.dup2(stderr_fd, 2);
+		if(os != null) {
+		    // Resore stdout and stderr.
+		    libkernel.dup2(stdout_fd, 1);
+		    libkernel.dup2(stderr_fd, 2);
+		}
 	    } else {
 		throw new IOException("Invalid ELF file");
 	    }
