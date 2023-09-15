@@ -28,12 +28,25 @@ public class MyXlet implements UserEventListener, Xlet {
 
 	listUI = new ListUI();
 	listUI.setSize(1280, 720);
+	listUI.addItem("Launch ELF loading daemon on port " + (ELF_PORT + 1),
+		       new Runnable() {
+			   public void run() {
+			       try {
+				   ElfLoading.runElf("/disc/elfldr.elf");
+				   libkernel.sendNotificationRequest("ELF loading daemon running on port " + (ELF_PORT + 1));
+			       } catch (Throwable t) {
+				   libkernel.sendNotificationRequest(t.getMessage());
+				   LoggingUI.getInstance().log(t);
+				   logUI.setVisible(true);
+			       }
+			   }
+		       });
 	listUI.addItem("Launch ELF loading server on port " + ELF_PORT,
 		       new Runnable() {
 			   public void run() {
 			       try {
 				   ElfLoading.spawnServer(ELF_PORT);
-				   libkernel.sendNotificationRequest("ELF loader running on port " + ELF_PORT);
+				   libkernel.sendNotificationRequest("ELF loading server running on port " + ELF_PORT);
 			       } catch (Throwable t) {
 				   libkernel.sendNotificationRequest(t.getMessage());
 				   LoggingUI.getInstance().log(t);
@@ -46,7 +59,7 @@ public class MyXlet implements UserEventListener, Xlet {
 			   public void run() {
 			       try {
 				   JarLoading.spawnServer(JAR_PORT);
-				   libkernel.sendNotificationRequest("JAR loader running on port " + JAR_PORT);
+				   libkernel.sendNotificationRequest("JAR loading server running on port " + JAR_PORT);
 			       } catch (Throwable t) {
 				   libkernel.sendNotificationRequest(t.getMessage());
 				   LoggingUI.getInstance().log(t);
@@ -59,27 +72,7 @@ public class MyXlet implements UserEventListener, Xlet {
 			   public void run() {
 			       try {
 				   LuaLoading.spawnServer(LUA_PORT);
-				   libkernel.sendNotificationRequest("Lua loader running on port " + LUA_PORT);
-			       } catch (Throwable t) {
-				   libkernel.sendNotificationRequest(t.getMessage());
-				   LoggingUI.getInstance().log(t);
-				   logUI.setVisible(true);
-			       }
-			   }
-		       });
-	listUI.addItem("Enable debug/dev mode",
-		       new Runnable() {
-			   public void run() {
-			       try {
-				   int sflags = KernelPatching.getSecurityFlags();
-				   byte uflags = KernelPatching.getUtokenFlags();
-				   long qflags = KernelPatching.getQAFlags();
-
-				   KernelPatching.setSecurityFlags(sflags | 0x14);
-				   KernelPatching.setUtokenFlags((byte)(uflags | 0x1));
-				   KernelPatching.setQAFlags(qflags | 0x0000000000010300l);
-				   KernelPatching.setTargetId((byte)0x82);
-				   libkernel.sendNotificationRequest("Debug/dev mode enabled");
+				   libkernel.sendNotificationRequest("Lua loading server running on port " + LUA_PORT);
 			       } catch (Throwable t) {
 				   libkernel.sendNotificationRequest(t.getMessage());
 				   LoggingUI.getInstance().log(t);
@@ -137,6 +130,13 @@ public class MyXlet implements UserEventListener, Xlet {
 	    KernelPatching.setSceCaps(0xffffffffffffffffl, 0xffffffffffffffffl);
 	    KernelPatching.setSceAttr(KernelPatching.getSceAttr() | 0x80);
 	    LoggingUI.getInstance().log("[+] Escalated privileges");
+
+	    KernelPatching.setSecurityFlags(KernelPatching.getSecurityFlags() | 0x14);
+	    KernelPatching.setUtokenFlags((byte)(KernelPatching.getUtokenFlags() | 0x1));
+	    KernelPatching.setQAFlags(KernelPatching.getQAFlags() | 0x0000000000010300l);
+	    KernelPatching.setTargetId((byte)0x82);
+	    LoggingUI.getInstance().log("[+] Debug/dev mode enabled");
+
 	    logUI.setVisible(false);
 	    EventManager.getInstance().addUserEventListener(this, evtRepo);
 	} catch (Throwable t) {

@@ -38,7 +38,9 @@ export JAVA11_HOME
 CLASSPATH := $(BDJSDK_HOME)/target/lib/enhanced-stubs.zip:$(BDJSDK_HOME)/target/lib/sony-stubs.jar
 SOURCES   := $(wildcard src/org/homebrew/*.java)
 JFLAGS    := -Xlint:-options
-LUAJ_URL  := https://github.com/luaj/luaj/releases/download/v3.0.2/luaj-jse-3.0.2.jar
+
+LUAJ_URL   := https://github.com/luaj/luaj/releases/download/v3.0.2/luaj-jse-3.0.2.jar
+ELFLDR_URL := https://github.com/john-tornblom/ps5-payload-elfldr/releases/download/release%2Fv0.1/Payload.zip
 
 #
 # Disc files
@@ -49,17 +51,18 @@ TMPL_FILES := $(shell find $(BDJSDK_HOME)/resources/AVCHD/ -type f)
 DISC_DIRS  := $(patsubst $(BDJSDK_HOME)/resources/AVCHD%,discdir%,$(TMPL_DIRS)) \
               discdir/BDMV/JAR
 DISC_FILES := $(patsubst $(BDJSDK_HOME)/resources/AVCHD%,discdir%,$(TMPL_FILES)) \
-              discdir/BDMV/JAR/00000.jar
-
+              discdir/BDMV/JAR/00000.jar discdir/elfldr.elf
 
 all: $(DISC_LABEL).iso
-
 
 discdir:
 	mkdir -p $(DISC_DIRS)
 
 luaj.jar:
 	wget -q -O $@ $(LUAJ_URL)
+
+discdir/elfldr.elf:
+	wget -qO- $(ELFLDR_URL) | gunzip -c - > $@
 
 discdir/BDMV/JAR/00000.jar: discdir $(SOURCES) luaj.jar
 	$(JAVAC) $(JFLAGS) -cp $(CLASSPATH):luaj.jar $(SOURCES)
@@ -70,10 +73,8 @@ discdir/BDMV/JAR/00000.jar: discdir $(SOURCES) luaj.jar
 discdir/%: discdir
 	cp $(BDJSDK_HOME)/resources/AVCHD/$* $@
 
-
 $(DISC_LABEL).iso: $(DISC_FILES)
 	$(MAKEFS) -m 16m -t udf -o T=bdre,v=2.50,L=$(DISC_LABEL) $@ discdir
-
 
 clean:
 	rm -rf META-INF $(DISC_LABEL).iso discdir src/org/homebrew/*.class

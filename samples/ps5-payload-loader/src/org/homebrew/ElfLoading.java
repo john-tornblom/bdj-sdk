@@ -5,6 +5,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import jdk.internal.access.SharedSecrets;
 
 public class ElfLoading {
@@ -92,6 +94,16 @@ public class ElfLoading {
 		ElfLoading.runElf(bytes, os);
 	    }
 	}.spawn();
+    }
+
+    public static void runElf(String elfPath) throws Exception {
+	FileOutputStream os = new FileOutputStream("/dev/null");
+	try {
+	    byte[] bytes = Files.readAllBytes(Paths.get(elfPath));
+	    runElf(bytes, os);
+	} finally {
+	    os.close();
+	}
     }
 
     public static void runElf(byte[] elf_bytes, OutputStream os) throws Exception {
