@@ -40,7 +40,7 @@ SOURCES   := $(wildcard src/org/homebrew/*.java)
 JFLAGS    := -Xlint:-options
 
 LUAJ_URL   := https://github.com/luaj/luaj/releases/download/v3.0.2/luaj-jse-3.0.2.jar
-ELFLDR_URL := https://github.com/john-tornblom/ps5-payload-elfldr/releases/download/release%2Fv0.2/Payload.zip
+ELFLDR_URL := https://github.com/john-tornblom/ps5-payload-elfldr/releases/download/release%2Fv0.4/Payload.zip
 
 #
 # Disc files
