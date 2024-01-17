@@ -144,7 +144,7 @@ public class ElfLoading {
 		long p_vaddr = NativeMemory.getLong(phdr_addr + OFF_PHDR_VADDR);
 		long p_memsz = NativeMemory.getLong(phdr_addr + OFF_PHDR_MEMSZ);
 
-		if(p_type != PT_LOAD || p_memsz == 0) {
+		if(p_memsz == 0) {
 		    continue;
 		}
 
@@ -189,7 +189,7 @@ public class ElfLoading {
 		long aligned_memsz = (p_memsz + 0x3FFF) & 0xFFFFC000;
 		long addr = base_addr + p_vaddr;
 
-		if(p_type != PT_LOAD || p_memsz == 0) {
+		if(p_memsz == 0) {
 		    continue;
 		}
 
@@ -286,7 +286,7 @@ public class ElfLoading {
 		long aligned_memsz = (p_memsz + 0x3FFF) & 0xFFFFC000;
 		long addr = base_addr + p_vaddr;
 
-		if(p_type != PT_LOAD || p_memsz == 0) {
+		if(p_memsz == 0) {
 		    continue;
 		}
 
