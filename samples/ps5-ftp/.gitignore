@@ -1,0 +1,13 @@
+*~
+*.class
+discdir
+META-INF
+*.iso
+*.jar
+*.classpath
+*.project
+*.gradle
+/.gradle
+/.settings
+/.vscode
+/bin
