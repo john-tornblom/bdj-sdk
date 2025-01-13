@@ -57,4 +57,8 @@ public final class Unsafe {
     }
 
     public native long getLong(Object o, long offset);
+
+	public long objectFieldOffset(Class c, String name) {
+	return 0;
+	}
 }
