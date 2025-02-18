@@ -51,6 +51,46 @@ public class KernelOffset {
 	    PRISON0        = 0x1D34D00;
 	    ROOTVNODE      = 0x66E74C0;
 	    break;
+			
+        case 0x5000000:
+        case 0x5020000:
+        case 0x5100000:
+        case 0x5500000:
+	    ALLPROC        = 0x290DD00;
+	    SECURITY_FLAGS = 0x66366EC;
+	    TARGETID       = 0x66366F5;
+	    QA_FLAGS       = 0x6636710;
+	    UTOKEN_FLAGS   = 0x6636778;
+	    PRISON0        = 0x1E119C0;
+	    ROOTVNODE      = 0x6843510;
+	    break;
+
+        case 0x6000000:
+        case 0x6020000:
+        case 0x6500000:
+	    ALLPROC        = 0x2859D20;
+	    SECURITY_FLAGS = 0x65868EC;
+	    TARGETID       = 0x65868F5;
+	    QA_FLAGS       = 0x6586910;
+	    UTOKEN_FLAGS   = 0x6586978;
+	    PRISON0        = 0x1E35560;
+	    ROOTVNODE      = 0x678F510;
+	    break;
+
+        case 0x7000000:
+        case 0x7010000:
+        case 0x7200000:
+        case 0x7400000:
+        case 0x7600000:
+        case 0x7610000:
+	    ALLPROC        = 0x2849D50;
+	    SECURITY_FLAGS = 0x0AB8064;
+	    TARGETID       = 0x0AB806D;
+	    QA_FLAGS       = 0x0AB8088;
+	    UTOKEN_FLAGS   = 0x0AB80F0;
+	    PRISON0        = 0x1E35C00;
+	    ROOTVNODE      = 0x30B7510;
+	    break;
 
 	default:
 	    ALLPROC        = 0;
